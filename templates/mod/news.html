@@ -1,0 +1,84 @@
+{% macro entry(post, mod, config, active, token) %}
+	<div class="na-news" id="{{ post.id }}">
+		<div class="na-news-acts">
+			<a href="{{ config.root }}news.php?id={{ post.id }}" target="_blank" title="Сторінка новини"><i class="fa fa-external-link"></i></a>
+			{% if mod|hasPermission(config.mod.news) %}<a href="?/edit_news/edit/{{ post.id }}">редагувати</a>{% endif %}
+			{% if active and mod|hasPermission(config.mod.news) %}
+				<a href="?/edit_news/deactivate/{{ post.id }}/{{ post.deactivate_token }}" onclick="return confirm('Деактивувати новину? Вона зникне з головної й піде в архів.')">деактивувати</a>
+			{% endif %}
+			{% if mod|hasPermission(config.mod.news_delete) %}
+				<a href="?/edit_news/delete/{{ post.id }}/{{ post.delete_token }}" onclick="return confirm('Видалити новину назавжди?')">видалити</a>
+			{% endif %}
+		</div>
+		<h3>{{ post.subject|e }}</h3>
+		<div class="unimportant">
+			{{ post.shown_name|e }} · {{ post.time|ldate('d.m.Y H:i') }}
+			{% if post.until %} · {{ active ? 'активна до' : 'була до' }} {{ post.until|ldate('d.m.Y H:i') }}{% elseif active %} · до деактивації{% endif %}
+		</div>
+		{% if post.summary %}<p><em>{{ post.summary|e }}</em></p>{% endif %}
+		<div class="na-news-body">{{ post.body }}</div>
+		{% if mod|hasPermission(config.mod.news) %}
+		<form action="?/edit_news" method="post" class="na-news-thread">
+			<input type="hidden" name="token" value="{{ token }}">
+			<input type="hidden" name="news_id" value="{{ post.id }}">
+			Обговорення новини:
+			<input type="text" name="thread" value="{{ post.discussion ? post.discussion.board ~ '/' ~ post.discussion.id : '' }}" placeholder="дошка/номер або адреса нитки" size="30">
+			<input type="submit" value="{{ post.discussion ? 'Змінити' : 'Додати' }}">
+			{% if post.discussion %}<a href="{{ post.discussion.url }}" target="_blank">&gt;&gt;&gt;/{{ post.discussion.board }}/{{ post.discussion.id }}</a>{% endif %}
+		</form>
+		{% elseif post.discussion %}
+		<div>Обговорення новини: <a href="{{ post.discussion.url }}" target="_blank">&gt;&gt;&gt;/{{ post.discussion.board }}/{{ post.discussion.id }}</a></div>
+		{% endif %}
+	</div>
+{% endmacro %}
+{% import _self as n %}
+
+{% if mod|hasPermission(config.mod.news) %}
+<fieldset>
+	<legend>Нова новина</legend>
+	<form action="?/edit_news" method="post" class="na-form nichan-news-form">
+		<input type="hidden" name="token" value="{{ token }}">
+		<label>Ім'я <span class="unimportant">(порожнє — «Admin»)</span>
+			<input type="text" name="name" maxlength="50" placeholder="Admin"></label>
+		<label>Тема
+			<input type="text" name="subject" maxlength="200" required></label>
+		<label>Короткий опис <span class="unimportant">(на головній і під іншими новинами)</span>
+			<input type="text" name="summary" maxlength="400"></label>
+		<label>Текст новини <span class="unimportant">(розмітка як у дописах)</span>
+			<textarea name="body" rows="8" required></textarea></label>
+		<label>Обговорення новини <span class="unimportant">(нитка: дошка/номер, напр. n/123, або її адреса; можна додати й пізніше)</span>
+			<input type="text" name="thread" maxlength="200" placeholder="n/123"></label>
+		<label>Активна до <span class="unimportant">(порожнє — доки не деактивуєте)</span>
+			<input type="datetime-local" name="until" min="{{ now|ldate('Y-m-d\\TH:i') }}" style="width:auto"></label>
+		<p><input type="submit" value="Опублікувати"></p>
+	</form>
+</fieldset>
+{% endif %}
+
+<fieldset>
+	<legend>Активні новини ({{ active|length }})</legend>
+	{% for post in active %}
+		{{ n.entry(post, mod, config, true, token) }}
+	{% else %}
+		<p class="unimportant">Зараз активних новин немає, блок «Останні новини» на головній сховано.</p>
+	{% endfor %}
+</fieldset>
+
+{% if mod|hasPermission(config.mod.nichan_news_archive) %}
+<fieldset>
+	<legend>Архів новин ({{ count }})</legend>
+	<p class="unimportant">Деактивовані й прострочені новини. Їх бачать лише адміністратори й модератори.</p>
+	{% for post in archive %}
+		{{ n.entry(post, mod, config, false, token) }}
+	{% else %}
+		<p class="unimportant">Архів порожній.</p>
+	{% endfor %}
+	{% if count > config.mod.news_page %}
+	<p class="unimportant" style="text-align:center;word-wrap:break-word">
+		{% for i in range(0, (count - 1) // config.mod.news_page) %}
+			{% if i + 1 == page_no %}<strong>[{{ i + 1 }}]</strong>{% else %}<a href="?/edit_news/{{ i + 1 }}">[{{ i + 1 }}]</a>{% endif %}
+		{% endfor %}
+	</p>
+	{% endif %}
+</fieldset>
+{% endif %}

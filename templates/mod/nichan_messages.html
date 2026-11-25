@@ -1,0 +1,48 @@
+{% macro boards_pick(boards, chosen) %}
+	<div class="nb-boards">{% for b in boards %}<label class="na-check"><input type="checkbox" name="boards[]" value="{{ b.uri }}"{% if b.uri in chosen %} checked{% endif %}> /{{ b.uri }}/</label>{% endfor %}</div>
+{% endmacro %}
+{% import _self as m %}
+<style>
+	.nb-boards { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 4px 0 10px; }
+	.nm-preview { margin: 6px 0 10px; padding: 6px 10px; border: 1px dashed rgba(128, 128, 128, .5); border-radius: 6px; text-align: center; }
+	.nm-preview img { max-width: 100%; }
+</style>
+<div style="max-width:980px;margin:0 auto;padding:0 8px">
+	<p class="unimportant">Повідомлення показується на сторінках дошки й ниток під формою (як «Підтримайте Українську Армію!»). У кожного повідомлення свої дошки;
+		якщо дошку вибрано в кількох, повідомлення йдуть одне під одним. Дошка без повідомлення — без нього. Можна HTML: посилання
+		<code>&lt;a href="https://…"&gt;текст&lt;/a&gt;</code>, картинки <code>&lt;img src="…"&gt;</code>, <code>&lt;b&gt;</code>, <code>&lt;br&gt;</code>;
+		завантажена картинка додається в кінець тексту. Після збереження змінені дошки перебудовуються.</p>
+	{% if from_config %}<p class="nichan-warn" style="padding:6px 10px;border-left:3px solid #c90;background:rgba(204,153,0,.12)">Зараз діє повідомлення з <code>inc/instance-config.php</code> на всіх дошках.
+		Після першого збереження тут воно задається лише цією сторінкою.</p>{% endif %}
+
+	{% for msg in messages %}
+	<form method="post" action="?/nichan-messages" enctype="multipart/form-data" class="na-form">
+		<input type="hidden" name="token" value="{{ token }}">
+		<input type="hidden" name="message" value="{{ msg.id }}">
+		<fieldset>
+			<legend>Повідомлення {{ loop.index }}</legend>
+			<div class="nm-preview">{{ msg.text }}</div>
+			<label>Повідомлення <textarea name="text" rows="3">{{ msg.text|e }}</textarea></label>
+			<label>Додати картинку <span class="unimportant">(PNG, GIF, JPEG або WEBP до 2 МБ; стане в кінець тексту)</span>
+				<input type="file" name="image" accept="image/png,image/gif,image/jpeg,image/webp"></label>
+			<strong>Дошки</strong>{% if not msg.boards|length %} <span class="unimportant">— не вибрано: ніде не показується</span>{% endif %}
+			{{ m.boards_pick(boards, msg.boards) }}
+			<p><input type="submit" value="Зберегти">
+				<label class="na-check" style="display:inline;margin-left:20px"><input type="checkbox" name="delete" value="1"> видалити повідомлення</label></p>
+		</fieldset>
+	</form>
+	{% endfor %}
+
+	<form method="post" action="?/nichan-messages" enctype="multipart/form-data" class="na-form">
+		<input type="hidden" name="token" value="{{ token }}">
+		<fieldset>
+			<legend>Нове повідомлення</legend>
+			<label>Повідомлення <textarea name="text" rows="3" placeholder="напр. Підтримайте Українську Армію! &lt;a href=&quot;https://…&quot;&gt;Задонатити&lt;/a&gt;"></textarea></label>
+			<label>Картинка <span class="unimportant">(за бажанням)</span>
+				<input type="file" name="image" accept="image/png,image/gif,image/jpeg,image/webp"></label>
+			<strong>Дошки</strong>
+			{{ m.boards_pick(boards, []) }}
+			<p><input type="submit" value="Додати"></p>
+		</fieldset>
+	</form>
+</div>

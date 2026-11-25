@@ -1,0 +1,19 @@
+<div style="max-width:900px;margin:0 auto;padding:0 8px">
+	<p class="unimportant">Нитки, що випали за останню сторінку дошки. «Витягти» повертає нитку нагору дошки й відкриває її для відповідей;
+		якщо сторінки повні, найнижча нитка дошки переходить в архів замість неї.</p>
+	{% if rows|length %}
+	<table class="modlog" style="width:100%">
+		<tr><th>№</th><th>Нитка</th><th>В архіві з</th>{% if can_unarchive %}<th></th>{% endif %}</tr>
+		{% for r in rows %}
+		<tr>
+			<td><a href="?/{{ board_uri }}/res/{{ r.id }}.html">{{ r.id }}</a></td>
+			<td>{{ r.title|e }}</td>
+			<td style="white-space:nowrap">{{ r.archived|ldate('d.m.Y H:i') }}</td>
+			{% if can_unarchive %}<td><a href="?/{{ board_uri }}/unarchive/{{ r.id }}/{{ r.token }}" onclick="return confirm('Витягти нитку №{{ r.id }} з архіву?')">витягти</a></td>{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
+	{% else %}
+	<p style="text-align:center"><em>Архів порожній.</em></p>
+	{% endif %}
+</div>

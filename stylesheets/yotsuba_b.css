@@ -1,0 +1,59 @@
+/*
+ * yotsuba b: the classic blue imageboard style (after 4chan's "Yotsuba B"), for Nichan's markup.
+ * Built on the base stylesheet (style.css), which is always loaded before it.
+ */
+body {
+  --nichan-tree-active: #117743;
+  --nichan-gallery-background: #d6daf0;
+  --nichan-gallery-border: #b7c5d9;
+  --nichan-gallery-tile: #eef2ff;
+  --nichan-gallery-hover: #d6bad0;
+  --nichan-gallery-selected: #34345c;
+  --nichan-gallery-button: #f0f0f0;
+  --nichan-gallery-button-text: #000;
+  background: #EEF2FF url('img/yotsuba-fade-blue.png') repeat-x top center; color: #000; font-family: arial, helvetica, sans-serif; font-size: 10pt;
+}
+a, a:visited { color: #34345C; text-decoration: none; }
+a:hover, .intro a.post_no:hover { color: #DD0000; }
+.intro a.email span.name { color: #34345C; }
+.intro a.email:hover span.name { color: #DD0000; }
+h2 { color: #AF0A0F; }
+hr { border: none; border-top: 1px solid #B7C5D9; height: 0; }
+
+header h1, h1 { color: #AF0A0F; font-family: Tahoma, sans-serif; font-size: 24pt; font-weight: bold; letter-spacing: -2px; margin-top: 0; text-align: center; }
+header div.subtitle { color: #AF0A0F; }
+div.blotter { color: #AF0A0F; font-weight: bold; }
+
+div.post.op { background: transparent; }
+div.post.reply { background: #D6DAF0; border: 1px solid #B7C5D9; border-left: none; border-top: none; }
+div.post.reply.highlighted, div.post.reply:target { background: #D6BAD0; border-color: #BA9DBF; }
+div.post.reply.post-hover, .nichan-preview { background: #D6DAF0; border: 1px solid #B7C5D9; }
+.intro span.subject { color: #0F0C5D; font-weight: bold; }
+.intro span.name { color: #117743; font-weight: bold; }
+span.trip { color: #117743; font-weight: normal; }
+.intro span.capcode, p.intro a.capcode, p.intro a.nametag { color: #FF0000; font-weight: bold; }
+span.quote { color: #789922; }
+span.heading { color: #AF0A0F; font-weight: bold; }
+span.omitted, .unimportant, .unimportant * { color: #707070; }
+div.post div.body a, .intro a.post_no { color: #34345C; }
+div.post.reply div.body a { color: #D00; }
+span.spoiler { background: #000; color: #000; }
+div.post.reply div.body span.spoiler a { color: #000; }
+span.spoiler:hover, span.spoiler:hover a { color: #fff; }
+
+form table tr th { background: #9988EE; border: 1px solid #7766DD; color: #000; font-weight: bold; padding: 0 5px; }
+input[type="text"], input[type="password"], textarea, select { background: #fff; color: #000; border: 1px solid #AAA; }
+input[type="submit"], button { background: #F0F0F0; color: #000; border: 1px solid #AAA; }
+
+div.pages { color: #89A; background: #D6DAF0; border-right: 1px solid #B7C5D9; border-bottom: 1px solid #B7C5D9; }
+div.pages a.selected { color: #000; }
+.pages.topleft, .pages.topright { background: #D6DAF0; border-bottom: 1px solid #B7C5D9; }
+div.boardlist, div.boardlist a { color: #89A; }
+div.banner { background: #9988EE; color: #fff; }
+div.banner a { color: #fff; }
+
+.box { background: #D6DAF0; border: 1px solid #B7C5D9; color: #000; }
+.box h2, .box.left h2, .box.images h2, .box.right h2 { background: #9988EE; color: #000; }
+div.ban { background: #D6DAF0; border: 1px solid #B7C5D9; }
+div.ban h2 { background: #9988EE; color: #000; }
+#options_div, #alert_div { background: #D6DAF0; border: 1px solid #B7C5D9; color: #000; }

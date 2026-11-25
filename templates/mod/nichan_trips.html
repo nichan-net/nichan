@@ -1,0 +1,141 @@
+<div style="max-width:900px;margin:0 auto;padding:0 6px">
+	<p class="unimportant">Виберіть, хто може використовувати тріпкод. Якщо вказано і IP-адреси, і код, мають збігтися обидві умови.
+		Щоб ввести код, напишіть <code>Ім'я#код</code> або <code>#код</code> у полі імені. За самою IP-адресою тріпкод з’являється автоматично.
+		Зміни оформлення видно в опублікованих дописах після перебудови сторінок.</p>
+
+	{% if trips|length %}
+	<table class="modlog" style="width:100%">
+		<tr><th>Тріпкод</th><th>IP</th><th>Код</th><th>Нотатка</th><th></th></tr>
+		{% for t in trips %}
+		<tr>
+			<td style="font-size:1.2em">{{ t.html }}</td>
+			<td>{% if t.ips is null %}Будь-яка адреса{% else %}{% for ip in t.ips %}<a href="?/IP/{{ ip|e }}">{{ ip|e }}</a>{% if not loop.last %}<br>{% endif %}{% else %}Немає адрес{% endfor %}{% endif %}</td>
+			<td>{% if t.always %}Не потрібен{% elseif t.has_code %}Обов’язковий{% else %}Не задано (тріпкод не діє){% endif %}</td>
+			<td>{{ t.note|e }}</td>
+			<td style="white-space:nowrap">
+				<a href="?/nichan-trips&amp;edit={{ t.id }}">[змінити]</a>
+				<form action="?/nichan-trips" method="post" style="display:inline" onsubmit="return confirm('Видалити цей тріпкод?')">
+					<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="delete_trip" value="{{ t.id }}">
+					<button type="submit">видалити</button>
+				</form>
+			</td>
+		</tr>
+		{% endfor %}
+	</table>
+	{% endif %}
+
+	<fieldset style="margin-top:14px">
+		<legend>{{ current ? 'Змінити тріпкод' : 'Новий тріпкод' }}</legend>
+		<form action="?/nichan-trips" method="post" id="trip-form">
+			<input type="hidden" name="token" value="{{ token }}">
+			{% if current %}<input type="hidden" name="id" value="{{ current.id }}">{% endif %}
+			<input type="hidden" name="style" id="trip-style" value="{{ current ? current.style|json_encode|e : '' }}">
+			<table>
+				<tr><th>Умови</th><td>
+					<label><input type="checkbox" name="bind_ip" value="1"{% if (current and current.ips is not null) or (not current and prefill_ip) %} checked{% endif %}> Прив’язати до IP</label><br>
+					<label><input type="checkbox" name="require_code" value="1"{% if not current or not current.always %} checked{% endif %}> Вимагати код</label>
+				</td></tr>
+				<tr><th><label for="trip-ips">IP-адреси</label></th><td><textarea id="trip-ips" name="ips" rows="3" cols="38" placeholder="По одній адресі на рядок">{% if current %}{% for ip in current.ips %}{% if not loop.first %}&#10;{% endif %}{{ ip|e }}{% endfor %}{% else %}{{ prefill_ip|e }}{% endif %}</textarea></td></tr>
+				<tr><th><label for="trip-secret">Код</label></th><td><input id="trip-secret" type="password" name="secret" size="30" maxlength="100" autocomplete="new-password"
+					data-saved="{{ current and not current.always and current.has_code ? '1' : '0' }}" placeholder="{{ current and not current.always and current.has_code ? 'Залиште порожнім, щоб зберегти код' : 'Текст після #' }}"></td></tr>
+				<tr><th>Текст</th><td><input type="text" name="text" id="trip-text" size="30" maxlength="40" required value="{{ current ? current.text|e : '!!' }}"></td></tr>
+				<tr><th>Шрифт</th><td>
+					<select id="trip-font">
+						<option value="">як у сайту</option><option value="serif">із зарубками</option><option value="sans">без зарубок</option>
+						<option value="mono">моноширинний</option><option value="cursive">рукописний</option><option value="impact">Impact</option>
+					</select>
+					<label><input type="checkbox" id="trip-blink"> миготіння</label>
+				</td></tr>
+				<tr><th>Нотатка</th><td><input type="text" name="note" size="40" maxlength="200" value="{{ current ? current.note|e : '' }}" placeholder="для себе, на сайті не видно"></td></tr>
+			</table>
+			<p><b>Літери:</b> колір, жирний, курсив для кожної.
+				<button type="button" id="trip-rainbow">веселка</button>
+				<button type="button" id="trip-one">один колір для всіх</button> <input type="color" id="trip-onecolor" value="#e33a3a"></p>
+			<div id="trip-letters" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+			<p>Попередній перегляд: <span class="name">Анонім</span> <span id="trip-preview" style="font-size:1.3em"></span></p>
+			<p><input type="submit" value="Зберегти"> {% if current %}<a href="?/nichan-trips">скасувати</a>{% endif %}</p>
+		</form>
+	</fieldset>
+</div>
+<script>
+(function () {
+	var text = document.getElementById('trip-text'), box = document.getElementById('trip-letters');
+	var font = document.getElementById('trip-font'), blink = document.getElementById('trip-blink');
+	var out = document.getElementById('trip-style'), preview = document.getElementById('trip-preview');
+	var fields = document.getElementById('trip-form').elements;
+	function updateConditions() {
+		fields.bind_ip.setCustomValidity(fields.bind_ip.checked || fields.require_code.checked ? '' : 'Виберіть хоча б одну умову.');
+		fields.ips.disabled = !fields.bind_ip.checked;
+		fields.ips.required = fields.bind_ip.checked;
+		fields.secret.disabled = !fields.require_code.checked;
+		fields.secret.required = fields.require_code.checked && fields.secret.dataset.saved !== '1';
+	}
+	fields.bind_ip.addEventListener('change', updateConditions);
+	fields.require_code.addEventListener('change', updateConditions);
+	updateConditions();
+	var style = {};
+	try { style = JSON.parse(out.value || '{}') || {}; } catch (e) {}
+	style.letters = style.letters || [];
+	font.value = style.font || '';
+	blink.checked = !!style.blink;
+	var FONTS = { serif: 'Georgia, serif', sans: 'Arial, sans-serif', mono: '"Courier New", monospace', cursive: '"Comic Sans MS", cursive', impact: 'Impact, "Arial Black", sans-serif' };
+
+	function chars() { return Array.from(text.value); }
+	function letter(i) { return style.letters[i] || (style.letters[i] = { c: '', b: false, i: false }); }
+	function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+	function render() {
+		var cs = chars();
+		style.letters.length = Math.min(style.letters.length, cs.length);
+		box.innerHTML = '';
+		cs.forEach(function (ch, i) {
+			var l = letter(i), d = document.createElement('div');
+			d.style.cssText = 'border:1px solid rgba(128,128,128,.5);padding:3px;text-align:center;min-width:44px';
+			d.innerHTML = '<div style="font-size:1.3em">' + esc(ch === ' ' ? '␣' : ch) + '</div>' +
+				'<input type="color" value="' + (l.c || '#888888') + '" title="колір">' +
+				'<label title="жирний"><input type="checkbox" ' + (l.b ? 'checked' : '') + ' data-k="b">Ж</label>' +
+				'<label title="курсив"><input type="checkbox" ' + (l.i ? 'checked' : '') + ' data-k="i">К</label>' +
+				'<br><a href="javascript:void(0)" class="unimportant" title="без кольору">×</a>';
+			d.querySelector('input[type=color]').addEventListener('input', function () { l.c = this.value; update(); });
+			Array.prototype.forEach.call(d.querySelectorAll('input[type=checkbox]'), function (c) {
+				c.addEventListener('change', function () { l[c.getAttribute('data-k')] = c.checked; update(); });
+			});
+			d.querySelector('a').addEventListener('click', function () { l.c = ''; render(); });
+			box.appendChild(d);
+		});
+		update();
+	}
+	function update() {
+		style.font = font.value;
+		style.blink = blink.checked;
+		out.value = JSON.stringify(style);
+		preview.className = 'trip nichan-trip' + (style.blink ? ' nichan-blink' : '');
+		preview.style.fontFamily = FONTS[style.font] || '';
+		preview.innerHTML = chars().map(function (ch, i) {
+			var l = style.letters[i] || {}, s = '';
+			if (l.c) s += 'color:' + l.c + ';';
+			if (l.b) s += 'font-weight:bold;';
+			if (l.i) s += 'font-style:italic;';
+			return s ? '<span style="' + s + '">' + esc(ch) + '</span>' : esc(ch);
+		}).join('');
+	}
+	text.addEventListener('input', render);
+	font.addEventListener('change', update);
+	blink.addEventListener('change', update);
+	document.getElementById('trip-rainbow').addEventListener('click', function () {
+		var cs = chars();
+		cs.forEach(function (_, i) {
+			var h = Math.round(i / Math.max(1, cs.length) * 300), s = 0.85, v = 0.95;
+			var f = function (n) { var k = (n + h / 60) % 6; return Math.round((v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255); };
+			letter(i).c = '#' + [f(5), f(3), f(1)].map(function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+		});
+		render();
+	});
+	document.getElementById('trip-one').addEventListener('click', function () {
+		var c = document.getElementById('trip-onecolor').value;
+		chars().forEach(function (_, i) { letter(i).c = c; });
+		render();
+	});
+	render();
+})();
+</script>

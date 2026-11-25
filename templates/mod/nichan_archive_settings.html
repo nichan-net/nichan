@@ -1,0 +1,30 @@
+<fieldset>
+	<legend>Скільки сторінок на дошці</legend>
+	<p class="unimportant">Дошка показує стільки сторінок; нитки, що випали далі, закриваються й потрапляють в архів (посилання «Архів» на дошці),
+		лишаючись за своєю адресою і в пошуку. 0 — без архіву: старі нитки видаляються, як раніше.</p>
+	{% if can_edit %}
+	<form method="post" action="?/nichan-archive">
+		<input type="hidden" name="token" value="{{ token }}">
+		<p>Сторінок на дошці: <input type="number" name="archive_pages" value="{{ archive_pages }}" min="0" max="100" style="width:4em">
+			<span class="unimportant">(по {{ config.threads_per_page }} ниток)</span> <input type="submit" value="Зберегти"></p>
+	</form>
+	{% else %}
+	<p>{{ archive_pages ? 'Сторінок на дошці: ' ~ archive_pages : 'Архів вимкнено.' }}</p>
+	{% endif %}
+</fieldset>
+
+<fieldset>
+	<legend>Архіви дошок</legend>
+	<table class="modlog">
+		<tr><th>Дошка</th><th>Назва</th><th>Ниток в архіві</th><th></th></tr>
+		{% for b in boards %}
+		<tr>
+			<td><strong>/{{ b.uri }}/</strong></td>
+			<td>{{ b.title|e }}</td>
+			<td>{{ b.count }}</td>
+			<td>{% if b.count %}<a href="?/{{ b.uri }}/archive"><i class="fa fa-archive"></i> відкрити</a>{% endif %}</td>
+		</tr>
+		{% endfor %}
+	</table>
+	<p class="unimportant">В архіві дошки адміністратор може повернути нитку назад (кнопка «витягти»).</p>
+</fieldset>

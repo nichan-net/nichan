@@ -1,0 +1,6 @@
+<ul class="portal-extras">
+	<li><strong><a href="{{ config.root }}dm">Генератор демотиваторів і мемів</a></strong><span>Завантаж картинку і зроби з неї щось своє.</span></li>
+	{% if config.nichan_site.portal_links.fm %}<li><strong><a href="{{ config.nichan_site.portal_links.fm|e }}" target="_blank" rel="noopener">Файна Меморія</a></strong><span>Онлайн-вікі про інтернет.</span></li>{% endif %}
+	{% if config.nichan_site.portal_links.telegram %}<li><strong><a href="{{ config.nichan_site.portal_links.telegram|e }}" target="_blank" rel="noopener">Нічан у Telegram</a></strong><span>Слідкуй за оновленнями в телеграмі</span></li>{% endif %}
+{% if config.nichan_site.has_android_app %}	<li><strong><a href="{{ config.nichan_public_url|e }}/app/nichan_base.apk">Андроїд-додаток</a></strong><span>Зручний засіб залишатися з Нічаном у телефоні.</span></li>{% endif %}
+</ul>

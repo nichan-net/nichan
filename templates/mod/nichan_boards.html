@@ -1,0 +1,248 @@
+<form action="?/nichan-boards" method="post" style="max-width:980px;margin:0 auto" autocomplete="off" id="nichan-boards-form">
+	<input type="hidden" name="token" value="{{ token }}">
+	<input type="hidden" name="save" value="1">
+	{% if can_visibility %}<input type="hidden" name="order_list" id="order-list" value="">{% endif %}
+
+	{% if can_close_site or can_captcha %}
+	<fieldset>
+		<legend>Увесь сайт</legend>
+		{% if can_close_site %}
+		<p><label><input type="checkbox" name="site_closed" {% if site_closed %}checked{% endif %}>
+			<strong>Закрити можливість писати на всьому сайті</strong></label>
+			<br><span class="unimportant">Відвідувачі бачать замість форми «Адміністратор тимчасово закрив можливість писати на сайті».
+			Адміністратори й модератори можуть писати й далі.</span></p>
+		{% endif %}
+		{% if can_captcha %}
+		<p><label><input type="checkbox" name="captcha_all" {% if captcha_all %}checked{% endif %}>
+			<strong>Капча на всіх дошках</strong></label>
+			<br><span class="unimportant">Дошки, яким у таблиці не вибрано капчу, отримують {% if recaptcha_ready %}reCAPTCHA{% else %}українську
+			(англомовні — англійську){% endif %}. Адміністратори й модератори капчу не проходять.</span></p>
+		{% endif %}
+	</fieldset>
+	{% endif %}
+
+	<fieldset>
+		<legend>Дошки</legend>
+		<table class="modlog nichan-board-table" style="width:100%">
+			<tr>
+				{% if can_visibility %}<th title="Перетягніть рядок, щоб змінити порядок"></th>{% endif %}
+				<th>Дошка</th>
+				<th>Видимість</th>
+				<th>Постинг закрито</th>
+				<th>Капча</th>
+			</tr>
+			{% for b in boards %}
+			<tr data-uri="{{ b.uri }}"{% if can_visibility %} draggable="true"{% endif %}>
+				{% if can_visibility %}<td class="drag" style="white-space:nowrap">
+					<span class="handle" title="Перетягніть">⠿</span>
+					<button type="button" class="up" title="Вище">▲</button><button type="button" class="down" title="Нижче">▼</button>
+				</td>{% endif %}
+				<td>{% if can_visibility %}<a href="?/nichan-board/{{ b.uri }}" title="Ім'я аноніма, геолокація, позначки, перекладач"><strong>/{{ b.uri }}/ – {{ b.title|e }}</strong></a>
+					<a href="?/{{ config.board_path|sprintf(b.uri) }}{{ config.file_index }}" title="Відкрити дошку"><i class="fa fa-external-link"></i></a>
+					{% if b.features|length %}<br><span class="unimportant">{{ b.features|join(', ') }}</span>{% endif %}
+					{% else %}<a href="?/{{ config.board_path|sprintf(b.uri) }}{{ config.file_index }}">/{{ b.uri }}/</a> – {{ b.title|e }}{% endif %}</td>
+				<td>
+					{% if can_visibility %}
+					<select name="visibility[{{ b.uri }}]">
+						<option value="0" {% if b.visibility == 0 %}selected{% endif %}>публічна</option>
+						<option value="3" {% if b.visibility == 3 %}selected{% endif %}>прихована</option>
+						<option value="1" {% if b.visibility == 1 %}selected{% endif %}>модератори і адміни</option>
+						<option value="2" {% if b.visibility == 2 %}selected{% endif %}>лише адміни</option>
+					</select>
+					{% else %}
+						{% if b.visibility == 0 %}публічна{% elseif b.visibility == 3 %}прихована{% elseif b.visibility == 1 %}модератори і адміни{% else %}лише адміни{% endif %}
+					{% endif %}
+				</td>
+				<td style="text-align:center">
+					{% if can_close and mod|hasPermission(config.mod.nichan_close_board, b.uri) %}
+					<input type="checkbox" name="closed[{{ b.uri }}]" {% if b.posting_closed %}checked{% endif %}>
+					{% else %}{% if b.posting_closed %}так{% else %}ні{% endif %}{% endif %}
+				</td>
+				<td>
+					{% if can_captcha %}
+					<select name="captcha[{{ b.uri }}]">
+						<option value="" {% if b.captcha == '' %}selected{% endif %}>{{ captcha_all ? 'як на всіх дошках' : 'немає' }}</option>
+						<option value="recaptcha" {% if b.captcha == 'recaptcha' %}selected{% endif %}{% if not recaptcha_ready and b.captcha != 'recaptcha' %} disabled{% endif %}>reCAPTCHA{% if not recaptcha_ready %} (немає ключів){% endif %}</option>
+						<option value="uk" {% if b.captcha == 'uk' %}selected{% endif %}{% if not text_ready %} disabled{% endif %}>українська</option>
+						<option value="en" {% if b.captcha == 'en' %}selected{% endif %}{% if not text_ready %} disabled{% endif %}>англійська</option>
+					</select>
+					{% endif %}
+					{% if b.captcha_effective != b.captcha or not can_captcha %}
+					<span class="unimportant">{% if b.captcha_effective == '' %}{% if can_captcha %}(діє: немає){% else %}немає{% endif %}{% else %}{% if can_captcha %}(діє: {% endif %}{{ b.captcha_effective == 'recaptcha' ? 'reCAPTCHA' : (b.captcha_effective == 'uk' ? 'українська' : 'англійська') }}{% if can_captcha %}){% endif %}{% endif %}</span>
+					{% endif %}
+				</td>
+			</tr>
+			{% endfor %}
+		</table>
+		<p class="unimportant">
+			{% if can_visibility %}Порядок дошок у меню, на головній і в статистиці — перетягніть рядок (або стрілки ▲▼).{% endif %}
+			<b>Прихована</b> дошка відкривається за прямим посиланням, але її немає в меню, на головній, у статистиці, каталозі, RSS і sitemap.
+			Дошки «модератори і адміни» / «лише адміни» відвідувачам недоступні зовсім; модератори бачать їх окремим блоком у меню.
+			Закриття постингу діє одразу; меню у вже згенерованих сторінках тредів оновиться після «Перебудувати».
+			<b>Капча:</b> українська й англійська — картинка з двома спотвореними словами (англійська — для /int/).
+			{% if not text_ready %}<br><b>На цьому сервері PHP без GD/FreeType, тож картинкова капча недоступна.</b>{% endif %}
+		</p>
+	</fieldset>
+
+	{% if can_integration %}
+	<fieldset>
+		<legend>Інтеграція</legend>
+		<table>
+			<tr><th colspan="2" style="text-align:left">reCAPTCHA v2 («Я не робот», https://www.google.com/recaptcha/admin)</th></tr>
+			{% for k in [['recaptcha_public', 'Ключ сайту'], ['recaptcha_private', 'Секретний ключ']] %}
+			<tr>
+				<th><label for="f-{{ k[0] }}">{{ k[1] }}</label></th>
+				<td><input type="password" id="f-{{ k[0] }}" name="{{ k[0] }}" size="46" autocomplete="new-password" placeholder="{{ secrets[k[0]] ? '••••••••••••••••  (збережено; введіть новий, щоб замінити)' : 'не задано' }}">
+					{% if secrets[k[0]] %}<label class="unimportant"><input type="checkbox" name="{{ k[0] }}_clear"> видалити</label>{% endif %}</td>
+			</tr>
+			{% endfor %}
+			<tr><th colspan="2" style="text-align:left;padding-top:10px">Telegram: сповіщення про скарги</th></tr>
+			{% for k in [['telegram_bot_token', 'Токен бота'], ['telegram_chat_id', 'ID чату']] %}
+			<tr>
+				<th><label for="f-{{ k[0] }}">{{ k[1] }}</label></th>
+				<td><input type="password" id="f-{{ k[0] }}" name="{{ k[0] }}" size="46" autocomplete="new-password" placeholder="{{ secrets[k[0]] ? '••••••••••••••••  (збережено; введіть новий, щоб замінити)' : 'не задано' }}">
+					{% if secrets[k[0]] %}<label class="unimportant"><input type="checkbox" name="{{ k[0] }}_clear"> видалити</label>{% endif %}</td>
+			</tr>
+			{% endfor %}
+			<tr>
+				<th>Кнопки під скаргою</th>
+				<td>
+					{% if tg_webhook is null %}<span class="unimportant">спершу задайте токен бота й ID чату</span>
+					{% elseif tg_webhook.connected %}<strong>підключено</strong>{% if tg_webhook.pending %} <span class="unimportant">(у черзі: {{ tg_webhook.pending }})</span>{% endif %}
+					{% else %}<strong>не підключено</strong>{% endif %}
+					{% if tg_webhook is not null %}<a class="nichan-button" href="?/{{ tg_connect_link }}">{{ tg_webhook.connected ? 'Підключити заново' : 'Підключити кнопки' }}</a>{% endif %}
+					{% if tg_webhook.error|default('') %}<br><span class="unimportant">Остання помилка Telegram: {{ tg_webhook.error|e }}</span>{% endif %}
+				</td>
+			</tr>
+			<tr>
+				<th><label for="f-tgban">«Видалити й забанити»</label></th>
+				<td><select id="f-tgban" name="telegram_ban_length">
+					{% for secs, label in {'86400': 'бан на добу', '604800': 'бан на тиждень', '2592000': 'бан на 30 днів', '0': 'бан назавжди'} %}
+					<option value="{{ secs }}" {% if secs == tg_ban_length %}selected{% endif %}>{{ label }}</option>
+					{% endfor %}
+				</select> <span class="unimportant">на всіх дошках, причина — текст скарги</span></td>
+			</tr>
+			<tr><th colspan="2" style="text-align:left;padding-top:10px">Cloudflare: очищення кешу після кожної зміни сторінки</th></tr>
+			{% for k in [['cf_zone_id', 'Zone ID'], ['cf_api_token', 'API-токен']] %}
+			<tr>
+				<th><label for="f-{{ k[0] }}">{{ k[1] }}</label></th>
+				<td><input type="password" id="f-{{ k[0] }}" name="{{ k[0] }}" size="46" autocomplete="new-password" placeholder="{{ secrets[k[0]] ? '••••••••••••••••  (збережено; введіть новий, щоб замінити)' : 'не задано' }}">
+					{% if secrets[k[0]] %}<label class="unimportant"><input type="checkbox" name="{{ k[0] }}_clear"> видалити</label>{% endif %}</td>
+			</tr>
+			{% endfor %}
+			<tr>
+				<th>Стан</th>
+				<td>{% if cf_check is null %}<span class="unimportant">не налаштовано</span>{% elseif cf_check.ok %}<strong>працює</strong>{% else %}<strong>помилка:</strong> {{ cf_check.error|e }}{% endif %}
+					{% if cf_last_error %}<br><span class="unimportant">Остання помилка очищення: {{ cf_last_error|e }}</span>{% endif %}</td>
+			</tr>
+			<tr><th colspan="2" style="text-align:left;padding-top:10px">ffmpeg: кадр з відео (MP4, WEBM) як мініатюра</th></tr>
+			<tr>
+				<th>Стан</th>
+				<td>{% if ffmpeg.path and ffmpeg.webp %}<strong>працює</strong> <span class="unimportant">{{ ffmpeg.path|e }}</span>
+					{% elseif not ffmpeg.shell %}<strong>не працює:</strong> хостинг забороняє PHP сайту запускати програми (shell_exec у disable_functions)
+					{% elseif not ffmpeg.path %}<strong>не знайдено</strong> <span class="unimportant">вкажіть $config['webm']['ffmpeg_path'] в inc/instance-config.php або покладіть ffmpeg у ~/bin</span>
+					{% else %}<strong>не працює:</strong> PHP без підтримки WebP у GD{% endif %}</td>
+			</tr>
+			<tr><th colspan="2" style="text-align:left;padding-top:10px">Azure Translator: переклад дописів у застосунку</th></tr>
+			<tr>
+				<th><label for="f-azure_translator_key">Ключ</label></th>
+				<td><input type="password" id="f-azure_translator_key" name="azure_translator_key" size="46" autocomplete="new-password" placeholder="{{ secrets.azure_translator_key ? '••••••••••••••••  (збережено; введіть новий, щоб замінити)' : 'не задано' }}">
+					{% if secrets.azure_translator_key %}<label class="unimportant"><input type="checkbox" name="azure_translator_key_clear"> видалити</label>{% endif %}</td>
+			</tr>
+			<tr>
+				<th><label for="f-azure-region">Регіон</label></th>
+				<td><input type="text" id="f-azure-region" name="azure_translator_region" size="20" value="{{ azure.region|e }}" placeholder="westeurope"> <span class="unimportant">порожньо — лише для ресурсу в регіоні «Global»</span></td>
+			</tr>
+			<tr>
+				<th><label for="f-azure-endpoint">Адреса</label></th>
+				<td><input type="text" id="f-azure-endpoint" name="azure_translator_endpoint" size="46" value="{{ azure.endpoint|e }}" placeholder="{{ azure.default_endpoint }}"></td>
+			</tr>
+			<tr>
+				<th><label for="f-azure-month">Символів на місяць</label></th>
+				<td><input type="text" id="f-azure-month" name="translate_month_chars" size="10" value="{{ azure.budgets.month }}">
+					<span class="unimportant">цього місяця: {{ azure.month_used }}</span></td>
+			</tr>
+			<tr>
+				<th><label for="f-azure-day">Символів на добу</label></th>
+				<td><input type="text" id="f-azure-day" name="translate_day_chars" size="10" value="{{ azure.budgets.day }}">
+					<span class="unimportant">за останню добу: {{ azure.day_used }}</span></td>
+			</tr>
+			<tr>
+				<th>Стан</th>
+				<td>{% if not secrets.azure_translator_key %}<span class="unimportant">не налаштовано</span>{% elseif azure.check == 'ok' %}<strong>працює</strong>{% elseif azure.check %}<strong>помилка:</strong> {{ azure.check|e }}{% else %}<span class="unimportant">ще не перевірено</span>{% endif %}
+					{% if azure.error and azure.error != azure.check %}<br><span class="unimportant">Остання помилка: {{ azure.error|e }}</span>{% endif %}</td>
+			</tr>
+		</table>
+		<p class="unimportant">Cloudflare: Zone ID — на сторінці сайту в Cloudflare (праворуч, «API»); токен — My Profile → API Tokens → Create Token → Custom,
+			дозвіл Zone → Cache Purge → Purge, лише для цього сайту.</p>
+		<p class="unimportant">Azure Translator: portal.azure.com → Create a resource → Translator; тариф Free F0 (2 млн символів на місяць) або S1.
+			Потім у ресурсі Keys and Endpoint: «KEY 1» — у поле «Ключ», «Location/Region» — у «Регіон». Адресу змінюйте, лише щоб
+			перекладати в одному регіоні (https://api-eur.cognitive.microsofttranslator.com — лише в ЄС). Ключ перевіряється одразу після збереження.
+			Перекладаються лише дописи сайту і лише з застосунку; одна адреса — до 20 000 символів за 10 хвилин і 100 000 на добу;
+			повторний переклад того самого допису береться з бази. Коли ліміт сайту вичерпано, застосунок отримує «тимчасово недоступно».</p>
+		<p class="unimportant">Ключі й токени зберігаються лише в базі даних і ніде на сторінках не показуються.
+			Токен бота дає @BotFather; ID чату модераторів зазвичай починається з -100. Без токена або чату сповіщення не надсилаються.
+			Кнопки «Видалити», «Видалити й забанити», «Відхилити» під скаргою спрацьовують лише в цьому чаті; хто натиснув — видно
+			в журналі модерації й у відповіді бота під скаргою.</p>
+	</fieldset>
+	{% endif %}
+
+	<p style="text-align:center"><input type="submit" value="Зберегти"></p>
+</form>
+<style>
+	.nichan-board-table .drag { cursor: move; user-select: none; }
+	.nichan-board-table .handle { font-size: 1.2em; padding: 0 4px; opacity: .7; }
+	.nichan-board-table .drag button { padding: 0 4px; font-size: 10px; line-height: 1.4; }
+	.nichan-board-table tr.dragging { opacity: .4; }
+	.nichan-board-table tr.drop-before td { box-shadow: inset 0 2px 0 0 currentColor; }
+	.nichan-board-table tr.drop-after td { box-shadow: inset 0 -2px 0 0 currentColor; }
+</style>
+{% if can_visibility %}
+<script>
+(function () {
+	var table = document.querySelector('.nichan-board-table'), form = document.getElementById('nichan-boards-form');
+	var body = table.tBodies[0], dragged = null;
+	function rows() { return Array.prototype.slice.call(body.querySelectorAll('tr[data-uri]')); }
+	function clearMarks() { rows().forEach(function (r) { r.classList.remove('drop-before', 'drop-after'); }); }
+	body.addEventListener('dragstart', function (e) {
+		dragged = e.target.closest('tr[data-uri]');
+		if (!dragged) return;
+		dragged.classList.add('dragging');
+		e.dataTransfer.effectAllowed = 'move';
+		try { e.dataTransfer.setData('text/plain', dragged.getAttribute('data-uri')); } catch (x) {}
+	});
+	body.addEventListener('dragover', function (e) {
+		var tr = e.target.closest('tr[data-uri]');
+		if (!dragged || !tr || tr === dragged) return;
+		e.preventDefault();
+		clearMarks();
+		var r = tr.getBoundingClientRect();
+		tr.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+	});
+	body.addEventListener('drop', function (e) {
+		var tr = e.target.closest('tr[data-uri]');
+		if (!dragged || !tr || tr === dragged) return;
+		e.preventDefault();
+		var before = tr.classList.contains('drop-before');
+		body.insertBefore(dragged, before ? tr : tr.nextSibling);
+		clearMarks();
+	});
+	body.addEventListener('dragend', function () {
+		if (dragged) dragged.classList.remove('dragging');
+		dragged = null;
+		clearMarks();
+	});
+	// the arrows: for phones, where dragging table rows doesn't work
+	body.addEventListener('click', function (e) {
+		var b = e.target.closest('button.up, button.down');
+		if (!b) return;
+		var tr = b.closest('tr'), list = rows(), i = list.indexOf(tr);
+		if (b.classList.contains('up') && i > 0) body.insertBefore(tr, list[i - 1]);
+		if (b.classList.contains('down') && i < list.length - 1) body.insertBefore(tr, list[i + 1].nextSibling);
+	});
+	form.addEventListener('submit', function () {
+		document.getElementById('order-list').value = rows().map(function (r) { return r.getAttribute('data-uri'); }).join(' ');
+	});
+})();
+</script>
+{% endif %}

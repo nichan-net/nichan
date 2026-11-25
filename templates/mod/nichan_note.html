@@ -1,0 +1,9 @@
+<div style="max-width:700px;margin:0 auto;padding:0 8px">
+	<p><a href="{{ link }}">/{{ board_uri }}/ №{{ post.id }}</a>: <span class="unimportant">{{ preview|e }}</span></p>
+	<form method="post" action="?/{{ board_uri }}/nichan-note/{{ post.id }}">
+		<input type="hidden" name="token" value="{{ token }}">
+		<p><textarea name="note" rows="3" style="width:100%" maxlength="500" placeholder="наприклад: Попередження: без особистих образ">{{ note|e }}</textarea></p>
+		<p><input type="submit" value="Зберегти"> <span class="unimportant">Текст стоїть під дописом червоним курсивом, його бачать усі. Порожнє поле — прибрати.</span></p>
+	</form>
+	{% if note %}<p>Зараз: <span class="nichan-modnote" style="display:inline">{{ note|e }}</span></p>{% endif %}
+</div>

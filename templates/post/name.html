@@ -1,0 +1,11 @@
+{% set capcode = post.capcode|capcode %}
+{% if post.thread and post.email|lower == 'sage' and not config.hide_sage %}<span class="nichan-sage">SAGE!</span>&#32;{% endif %}
+<span {% if capcode.name %}style="{{ capcode.name }}" {% endif %} class="name">{{ post.name|bidi_cleanup }}</span>
+{% if post.trip starts with '!!ct' %}
+	{{ nichan_trip_html(post.trip) }}
+{% elseif post.trip|length > 0 %}
+	<span {% if capcode.trip %}style="{{ capcode.trip }}" {% endif %} class="trip">{{ post.trip }}</span>
+{% endif %}
+{% if capcode %}
+        {{ capcode.cap }}
+{% endif %}

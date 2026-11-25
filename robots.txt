@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /mod.php
+Disallow: /post.php
+Disallow: /search.php
+Disallow: /settings.php
+Disallow: /install.php

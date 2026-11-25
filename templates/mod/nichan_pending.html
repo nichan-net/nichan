@@ -1,0 +1,45 @@
+<div style="max-width:900px;margin:0 auto;padding:0 8px">
+	<p class="unimportant">Під час премодерації нові нитки чекають тут, поки модератор їх схвалить. Відповіді в наявних нитках публікуються одразу.
+		Увімкнути або вимкнути премодерацію: «Флуд і рейди» → «Премодерація нових ниток».</p>
+	{% if items|length %}
+	{% for it in items %}
+	<div class="np-card">
+		{% if it.thumb %}<a href="{{ it.files[0].src }}" target="_blank"><img src="{{ it.thumb }}" alt="" class="np-thumb"></a>{% endif %}
+		<div class="np-main">
+			<div class="unimportant">/{{ it.board }}/ · {{ it.time|ldate('d.m H:i') }} · <a href="?/IP/{{ it.ip }}">{{ it.ip }}</a>{% if it.files|length %} · файлів: {{ it.files|length }}{% endif %}</div>
+			{% if it.subject %}<strong>{{ it.subject|e }}</strong><br>{% endif %}
+			<div class="np-text">
+				<div class="np-short">{{ it.text|e }}</div>
+				{% if it.long %}
+				<details class="np-more">
+					<summary><span class="np-open">Розгорнути текст</span><span class="np-close">Згорнути текст</span></summary>
+					<div class="post op np-body"><div class="body">{{ it.body }}</div></div>
+				</details>
+				{% endif %}
+			</div>
+			{% if it.files|length > 1 or (it.files|length == 1 and not it.thumb) %}
+			<details class="np-more np-files-box">
+				<summary><span class="np-open">Показати всі файли ({{ it.files|length }})</span><span class="np-close">Сховати файли</span></summary>
+				<div class="np-files">
+					{% for f in it.files %}
+					<a href="{{ f.src }}" target="_blank" class="np-file" title="{{ f.name|e }}">
+						{% if f.thumb %}<img src="{{ f.thumb }}" alt="">{% else %}<span class="np-nothumb"><i class="fa fa-file-o"></i>{% if f.spoiler %} спойлер{% endif %}</span>{% endif %}
+						<span class="np-fname">{{ f.name|e }}</span>
+						{% if f.size %}<span class="unimportant">{{ f.size|filesize }}</span>{% endif %}
+					</a>
+					{% endfor %}
+				</div>
+			</details>
+			{% endif %}
+			<form method="post" action="?/nichan-pending" style="margin-top:6px">
+				<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="id" value="{{ it.id }}">
+				<button type="submit" name="approve" value="1">Схвалити</button>
+				<button type="submit" name="reject" value="1" onclick="return confirm('Відхилити нитку? Її файли буде видалено.')">Відхилити</button>
+			</form>
+		</div>
+	</div>
+	{% endfor %}
+	{% else %}
+	<p style="text-align:center"><em>Немає ниток на перевірці.</em></p>
+	{% endif %}
+</div>

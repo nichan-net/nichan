@@ -1,0 +1,122 @@
+<link rel="stylesheet" href="{{ nichan_asset(config.root ~ 'stylesheets/footer.css') }}">
+<link rel="stylesheet" media="screen" href="{{ nichan_asset(config.url_stylesheet) }}">
+		{% if config.url_favicon %}<link rel="shortcut icon" href="{{ config.url_favicon }}">{% endif %}
+		{# web app: install to the home screen (manifest.webmanifest, sw.js) #}
+		<link rel="manifest" href="{{ config.root }}manifest.webmanifest">
+		<meta name="theme-color" content="#161b22">
+		<link rel="apple-touch-icon" href="{{ config.root }}static/app/apple-touch-icon.png">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-title" content="{{ config.nichan_site.name|e }}">
+		<script>if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('{{ config.root }}sw.js').catch(function () {}); });</script>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+		{% if config.meta_keywords %}<meta name="keywords" content="{{ config.meta_keywords }}">{% endif %}
+		{# The visitor's settings (settings.php, kept in this browser): scripts on, header pinned, font size. #}
+		<script>(function () { var d = document.documentElement; d.className += ' nichan-js'; try {
+			if (localStorage.nichan_header_pinned === '1') d.className += ' nichan-header-pinned';
+			var fs = parseInt(localStorage.nichan_font_size, 10); if (fs >= 70 && fs <= 160 && fs !== 100) { d.className += ' nichan-text-scaled'; d.style.setProperty('--nichan-text', fs / 100); }
+		} catch (e) {} })();</script>
+		{% if config.default_stylesheet.1 != '' %}<link rel="stylesheet" type="text/css" id="stylesheet" href="{{ nichan_asset(config.uri_stylesheets ~ config.default_stylesheet.1) }}">{% endif %}
+		<link rel="stylesheet" href="{{ nichan_asset(config.root ~ 'stylesheets/nichan.css') }}">
+		{% if config.font_awesome %}<link rel="stylesheet" href="{{ config.root }}{{ config.font_awesome_css }}">{% endif %}
+		{% if config.country_flags_condensed %}<link rel="stylesheet" href="{{ nichan_asset(config.root ~ config.country_flags_condensed_css) }}">{% endif %}
+		{% if config.user_flag %}<link rel="stylesheet" href="{{ config.root }}static/flags/custom.css">{% endif %}
+		{# flags found from the address: regions of Ukraine, each board's own pictures (on /all/ and in quotes too) #}
+		{% if config.country_flags_condensed %}<link rel="stylesheet" href="{{ config.root }}static/flags/geo.css">{% endif %}
+		<script type="text/javascript">
+			var configRoot="{{ config.root }}";
+			var inMod = {% if mod %}true{% else %}false{% endif %};
+			var modRoot="{{ config.root }}"+(inMod ? "{{ config.file_mod }}?/" : "");
+			var nichan_board = "{{ board.uri|default("") }}";
+			var nichan_lang = "{{ (portal_section ? portal_en : config.locale starts with 'en') ? 'en' : 'uk' }}";
+			var nichan_site_host = "{{ config.nichan_site.host|e("js") }}";
+			var nichan_site_name = "{{ (config.locale starts with "en" ? config.nichan_site.name_en : config.nichan_site.name)|e("js") }}";
+		</script>
+<script>
+  /*
+   * Light YouTube Embeds by @labnol
+   * Credit: https://www.labnol.org/
+   */
+
+  function labnolIframe(div) {
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute(
+      'src',
+      'https://www.youtube.com/embed/' + div.dataset.id + '?autoplay=1&rel=0'
+    );
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allowfullscreen', '1');
+    iframe.setAttribute('width', '390');
+    iframe.setAttribute('height', '300');
+    iframe.setAttribute(
+      'allow',
+      'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture'
+    );
+    div.parentNode.replaceChild(iframe, div);
+  }
+
+  function initYouTubeVideos() {
+    var playerElements = document.getElementsByClassName('youtube-player');
+    for (var n = 0; n < playerElements.length; n++) {
+      var videoId = playerElements[n].dataset.id;
+      var div = document.createElement('div');
+      div.setAttribute('data-id', videoId);
+      var thumbNode = document.createElement('img');
+      thumbNode.src = '//i.ytimg.com/vi/ID/mqdefault.jpg'.replace(
+        'ID',
+        videoId
+      );
+      div.appendChild(thumbNode);
+      var playButton = document.createElement('div');
+      playButton.setAttribute('class', 'play');
+      div.appendChild(playButton);
+      div.onclick = function () {
+        labnolIframe(this);
+      };
+      playerElements[n].appendChild(div);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initYouTubeVideos);
+</script>
+		{# main.js applies the style the visitor picked, so every page loads it. #}
+		<script type="text/javascript" src="{{ config.url_javascript }}"></script>
+		{# The front page only needs site status when nichan.js initializes its controls. #}
+		{% set defer_front_status = is_front_page and not nojavascript and not config.additional_javascript_compile %}
+		{% if not nojavascript %}
+			{% if not config.additional_javascript_compile %}
+			{% for javascript in config.additional_javascript if page_scripts is not defined or javascript in page_scripts %}
+				{% if defer_front_status and not mod and javascript == 'js/nichan.js' %}<script defer src="{{ config.root }}site-status.js"></script>{% endif %}
+				<script type="text/javascript"{% if page_scripts is defined %} defer{% endif %} src="{{ nichan_asset(config.additional_javascript_url ~ javascript) }}"></script>
+			{% endfor %}
+			{% endif %}
+		{% else %}
+			{# pages without the board scripts (FAQ, statistics, ...) still get the menu's settings and the style switch #}
+			<script type="text/javascript" src="{{ nichan_asset(config.additional_javascript_url ~ 'js/nichan.js') }}"></script>
+		{% endif %}
+		{% if not mod %}
+		{# reCAPTCHA on/off and its site key come from this tiny file (rewritten from mod.php, no rebuild needed). #}
+		<script>window.nichanRecaptchaLoad = function () { window.nichanRecaptchaReady = true; if (window.nichanRenderRecaptcha) window.nichanRenderRecaptcha(); };</script>
+		{% if not defer_front_status %}<script src="{{ config.root }}site-status.js"></script>{% endif %}
+		{# a banner of the board's galleries (mod.php -> Банери), at random, put where the page calls it; a plain picture #}
+		<script>window.nichanBanner = function (at, uri) { var s = window.nichanStatus, l = s && s.banners && s.banners[uri]; if (!at || !l || !l.length) return;
+			var img = document.createElement('img'); img.className = 'board_image nichan-banner'; img.alt = ''; img.width = 300; img.height = 100; img.src = l[Math.floor(Math.random() * l.length)];
+			at.parentNode.insertBefore(img, at); };</script>
+		{% endif %}
+{% if not portal_section %}
+{% if not mod and not is_front_page %}
+	{# Closed posting hides the post form through these tiny stylesheets (no page rebuild needed). #}
+	<link rel="stylesheet" href="{{ config.root }}posting-status.css">
+	{% if board and board.dir %}<link rel="stylesheet" href="{{ config.root }}{{ board.dir }}posting-status.css">{% endif %}
+{% endif %}
+{% elseif classic_home %}
+<link rel="stylesheet" href="{{ nichan_asset(config.root ~ 'stylesheets/home-classic.css') }}">
+{% else %}
+<link rel="stylesheet" href="{{ nichan_asset(config.root ~ 'stylesheets/portal.css') }}">
+{% endif %}
+{# the visitor's own CSS (settings.php), after every stylesheet so that it wins #}
+<script>try { if (localStorage.nichan_custom_css) { var s = document.createElement('style'); s.id = 'nichan-custom-css'; s.textContent = localStorage.nichan_custom_css; document.head.appendChild(s); } } catch (e) {}</script>
+{% if not portal_section %}
+{% include 'board-menu.html' %}
+{% endif %}

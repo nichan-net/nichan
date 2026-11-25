@@ -1,0 +1,15 @@
+<div style="max-width:760px;margin:0 auto;padding:0 8px">
+	<p>Файл <b>{{ file.filename|e }}</b> з поста <a href="?/{{ board }}/res/{{ post.thread ?: post.id }}.html#{{ post.id }}">/{{ board }}/{{ post.id }}</a>
+		(MD5 <code>{{ md5 }}</code>) буде заборонено: такий самий файл, а для картинок — і перезбережені чи зменшені копії,
+		більше не вдасться завантажити на жодну дошку.</p>
+	<p>На сайті зараз <b>{{ copies|length }}</b> {{ copies|length == 1 ? 'пост' : 'постів' }} з цим файлом{% if copies|length > 1 %}:
+		{% for c in copies|slice(0, 30) %}<a href="?/{{ c.0 }}/res/{{ c.3 ?: c.1 }}.html#{{ c.1 }}">/{{ c.0 }}/{{ c.1 }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if copies|length > 30 %} …{% endif %}{% endif %}.</p>
+	<form method="post" action="?/{{ board }}/banfile/{{ post.id }}/{{ file_index }}">
+		<input type="hidden" name="token" value="{{ token }}">
+		<p><label>Причина (для себе): <input type="text" name="reason" size="40" maxlength="255" placeholder="наприклад: ЦП, спам"></label></p>
+		<p><label><input type="checkbox" name="all_copies" checked> прибрати файл з усіх {{ copies|length }} постів, а не лише з цього</label></p>
+		{% if can_delete %}<p><label><input type="checkbox" name="delete_posts"> видалити ці пости повністю (для спаму), а не лише файл</label></p>{% endif %}
+		<p><input type="submit" value="Заборонити файл"> <a href="javascript:history.back()">скасувати</a></p>
+	</form>
+	<p class="unimportant">Сама картинка ніде не зберігається — лише її хеші. Щоб ще й забанити автора, скористайтеся кнопкою бану біля поста.</p>
+</div>

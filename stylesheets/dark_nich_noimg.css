@@ -1,0 +1,4 @@
+/* "nichan no image": the nichan style without the picture in the corner. Change dark_nich.css, not this file. */
+@import url('dark_nich.css');
+
+body { background-image: none; }

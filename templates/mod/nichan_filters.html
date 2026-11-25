@@ -1,0 +1,159 @@
+<div style="max-width:980px;margin:0 auto;padding:0 8px">
+	{% if section == 'words' %}
+	<p class="unimportant" style="text-align:right"><a href="?/nichan-filters">Флуд і рейди →</a></p>
+	{% for action in ['block', 'replace'] %}
+	<fieldset style="margin-bottom:14px">
+		<legend>{{ action == 'block' ? 'Заборонені слова' : 'Автозаміна' }}</legend>
+		<p class="unimportant">{% if action == 'block' %}Пост із таким словом не пройде: «Пост містить слово з чорного списку». Модераторів це не стосується.{% else %}Слово в пості замінюється на вказане. Заміна «*» — зірочки на місці слова; у регулярних виразах можна $1, $2…{% endif %}
+			Регістр не важливий.</p>
+		{% if filters[action]|length %}
+		<div style="overflow-x:auto">
+		<table class="modlog" style="width:100%">
+			<tr><th>Слово</th>{% if action == 'replace' %}<th>Заміна</th>{% endif %}<th>Примітка</th><th>Спрацювань</th><th></th></tr>
+			{% for f in filters[action] %}
+			<tr>
+				<td><code>{{ f.pattern|e }}</code>
+					{% if f.is_regex %}<small class="unimportant">рег. вираз</small>{% elseif f.whole_word %}<small class="unimportant">ціле слово</small>{% endif %}
+					{% if f.broken %}<strong style="color:#c00">помилка у виразі</strong>{% endif %}</td>
+				{% if action == 'replace' %}<td><code>{{ f.replacement|e }}</code></td>{% endif %}
+				<td>{{ f.note|e }}{% if f.mod %} <small class="unimportant">({{ f.mod|e }})</small>{% endif %}</td>
+				<td style="text-align:center">{{ f.hits }}{% if f.last_hit %}<br><small class="unimportant">{{ f.last_hit|date('d.m H:i') }}</small>{% endif %}</td>
+				<td><form method="post" action="?/{{ page }}" style="display:inline" onsubmit="return confirm('Видалити?')">
+					<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="delete" value="{{ f.id }}">
+					<button type="submit">видалити</button></form></td>
+			</tr>
+			{% endfor %}
+		</table>
+		</div>
+		{% endif %}
+		<form method="post" action="?/{{ page }}" style="margin-top:8px">
+			<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="add_action" value="{{ action }}">
+			<input type="text" name="add_pattern" size="24" maxlength="255" placeholder="слово" required>
+			{% if action == 'replace' %}→ <input type="text" name="add_replacement" size="20" maxlength="255" placeholder="заміна або *">{% endif %}
+			<input type="text" name="add_note" size="18" maxlength="255" placeholder="примітка">
+			<label><input type="checkbox" name="add_whole" value="1"> ціле слово</label>
+			<label><input type="checkbox" name="add_regex" value="1"> рег. вираз</label>
+			<input type="submit" value="Додати">
+		</form>
+	</fieldset>
+	{% endfor %}
+
+	<fieldset style="margin-bottom:14px">
+		<legend>Перевірити текст</legend>
+		<form method="post" action="?/{{ page }}">
+			<input type="hidden" name="token" value="{{ token }}">
+			<p><textarea name="test" rows="3" cols="60">{{ test ? test.text|e : '' }}</textarea> <input type="submit" value="Перевірити"></p>
+		</form>
+		{% if test %}
+		{% if test.block %}<p><strong style="color:#c00">Не пройде</strong> — спрацювало <code>{{ test.block.pattern|e }}</code>.</p>
+		{% elseif test.result == test.text %}<p>Пройде без змін.</p>
+		{% else %}<p>Пройде так:</p><pre style="white-space:pre-wrap">{{ test.result|e }}</pre>{% endif %}
+		{% endif %}
+	</fieldset>
+
+	{% else %}
+	<p class="unimportant" style="text-align:right"><a href="?/nichan-words">Заборонені слова й автозаміна →</a></p>
+	<fieldset style="margin-bottom:14px">
+		<legend>Флуд</legend>
+		<p class="unimportant">Хто пише надто часто, отримує перерву: «Ти надто часто відповідаєш. Перепочинь ще N хвилин». Хто знову флудить протягом вікна після перерви — довшу. Рахується за IP; модераторів не стосується. 0 — без цього ліміту.</p>
+		{% if can_flood %}
+		<form method="post" action="?/{{ page }}">
+			<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="flood_save" value="1">
+			<p><label><input type="checkbox" name="flood_enabled" value="1"{% if flood.enabled %} checked{% endif %}> увімкнено</label></p>
+			<p>Не більше <input type="number" name="replies_1m" value="{{ flood.replies_1m }}" min="0" style="width:4em"> постів за хвилину,
+				<input type="number" name="replies_10m" value="{{ flood.replies_10m }}" min="0" style="width:4em"> за 10 хвилин,
+				<input type="number" name="threads_30m" value="{{ flood.threads_30m }}" min="0" style="width:4em"> ниток за 30 хвилин.</p>
+			<p>Перерва <input type="number" name="ban_first" value="{{ flood.ban_first // 60 }}" min="1" style="width:4em"> хв,
+				повторна <input type="number" name="ban_repeat" value="{{ flood.ban_repeat // 60 }}" min="1" style="width:4em"> хв,
+				якщо протягом <input type="number" name="repeat_window" value="{{ flood.repeat_window // 60 }}" min="1" style="width:4em"> хв після перерви.
+				<input type="submit" value="Зберегти"></p>
+		</form>
+		{% else %}
+		<p>{% if flood.enabled %}Не більше {{ flood.replies_1m }} постів за хвилину, {{ flood.replies_10m }} за 10 хвилин, {{ flood.threads_30m }} ниток за 30 хвилин.
+			Перерва {{ flood.ban_first // 60 }} хв, повторна {{ flood.ban_repeat // 60 }} хв.{% else %}Вимкнено.{% endif %}</p>
+		{% endif %}
+
+		<h4 style="margin:10px 0 4px">Нові нитки на дошці</h4>
+		<p class="unimportant">Якщо на дошці з'являється забагато нових ниток, створювати нитки там тимчасово не можна (відповідати можна). Бот пише про це в Telegram-чат модераторів.</p>
+		{% if can_flood %}
+		<form method="post" action="?/{{ page }}">
+			<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="board_lock_save" value="1">
+			<p><label><input type="checkbox" name="board_lock_enabled" value="1"{% if board_lock.enabled %} checked{% endif %}> увімкнено</label>:
+				понад <input type="number" name="bl_threads" value="{{ board_lock.threads }}" min="1" style="width:4em"> ниток
+				за <input type="number" name="bl_window" value="{{ board_lock.window // 60 }}" min="1" style="width:4em"> хв —
+				<select name="bl_action"><option value="lock"{% if board_lock.action != 'premod' %} selected{% endif %}>вимкнути нитки</option><option value="premod"{% if board_lock.action == 'premod' %} selected{% endif %}>премодерація нових ниток</option></select>
+				на <input type="number" name="bl_length" value="{{ board_lock.length // 60 }}" min="1" style="width:4em"> хв.
+				<input type="submit" value="Зберегти"></p>
+		</form>
+		{% else %}
+		<p>{% if board_lock.enabled %}Понад {{ board_lock.threads }} ниток за {{ board_lock.window // 60 }} хв — вимкнути на {{ board_lock.length // 60 }} хв.{% else %}Вимкнено.{% endif %}</p>
+		{% endif %}
+		{% if locked_boards|length %}
+		<table class="modlog" style="width:100%">
+			<tr><th>Дошка</th><th>Ще</th><th></th></tr>
+			{% for uri, until in locked_boards %}
+			<tr>
+				<td><a href="?/{{ uri }}/">/{{ uri }}/</a></td>
+				<td>{{ ((until - now) / 60)|round(0, 'ceil') }} хв</td>
+				<td>{% if can_flood %}<form method="post" action="?/{{ page }}" style="display:inline">
+					<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="board_unlock" value="{{ uri }}">
+					<button type="submit">увімкнути нитки</button></form>{% endif %}</td>
+			</tr>
+			{% endfor %}
+		</table>
+		{% else %}
+		<p><em>Зараз нитки можна створювати на всіх дошках.</em></p>
+		{% endif %}
+
+		<h4 style="margin:10px 0 4px">Премодерація нових ниток</h4>
+		<p class="unimportant">Нові нитки не з'являються одразу, а чекають схвалення в «Нитки на перевірці» (і в Telegram з кнопками). Відповіді — як завжди.</p>
+		<table class="modlog" style="width:100%">
+			<tr><th>Дошка</th><th>Зараз</th><th></th></tr>
+			{% for uri, until in premod %}
+			<tr>
+				<td>/{{ uri }}/</td>
+				<td>{% if until %}<strong>увімкнено</strong>, ще {{ ((until - now) / 60)|round(0, 'ceil') }} хв{% else %}—{% endif %}</td>
+				<td>{% if can_premod %}<form method="post" action="?/{{ page }}" style="display:inline">
+					<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="premod_board" value="{{ uri }}">
+					<select name="premod_minutes"><option value="0">вимкнути</option><option value="30">на 30 хв</option><option value="120">на 2 год</option><option value="1440">на добу</option><option value="525600">до вимкнення</option></select>
+					<button type="submit">застосувати</button></form>{% endif %}</td>
+			</tr>
+			{% endfor %}
+		</table>
+
+		<h4 style="margin:10px 0 4px">Багато дописів на дошці</h4>
+		<p class="unimportant">Бот пише в Telegram, якщо на дошці з'являється забагато дописів (нічого не вимикається). Не частіше разу за вказаний час.</p>
+		{% if can_flood %}
+		<form method="post" action="?/{{ page }}">
+			<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="board_alert_save" value="1">
+			<p><label><input type="checkbox" name="board_alert_enabled" value="1"{% if board_alert.enabled %} checked{% endif %}> увімкнено</label>:
+				понад <input type="number" name="ba_posts" value="{{ board_alert.posts }}" min="1" style="width:5em"> дописів
+				за <input type="number" name="ba_window" value="{{ board_alert.window // 60 }}" min="1" style="width:4em"> хв.
+				<input type="submit" value="Зберегти"></p>
+		</form>
+		{% else %}
+		<p>{% if board_alert.enabled %}Понад {{ board_alert.posts }} дописів за {{ board_alert.window // 60 }} хв.{% else %}Вимкнено.{% endif %}</p>
+		{% endif %}
+
+		<h4 style="margin:10px 0 4px">Зараз на перерві</h4>
+		{% if cooldowns|length %}
+		<table class="modlog" style="width:100%">
+			<tr><th>IP</th><th>Причина</th><th>Ще</th><th>Разів</th><th></th></tr>
+			{% for c in cooldowns %}
+			<tr>
+				<td><a href="?/IP/{{ c.ip }}">{{ c.ip }}</a></td>
+				<td>{{ c.reason|e }}</td>
+				<td>{{ ((c.until - now) / 60)|round(0, 'ceil') }} хв</td>
+				<td style="text-align:center">{{ c.strikes }}</td>
+				<td><form method="post" action="?/{{ page }}" style="display:inline">
+					<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="lift" value="{{ c.ip }}">
+					<button type="submit">зняти</button></form></td>
+			</tr>
+			{% endfor %}
+		</table>
+		{% else %}
+		<p><em>Нікого.</em></p>
+		{% endif %}
+	</fieldset>
+	{% endif %}
+</div>

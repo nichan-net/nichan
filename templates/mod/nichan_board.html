@@ -1,0 +1,43 @@
+<form method="post" action="?/nichan-board/{{ b.uri }}" class="na-form">
+	<input type="hidden" name="token" value="{{ token }}">
+	<p><a href="?/nichan-boards">← Налаштування дошок</a> · <a href="?/{{ config.board_path|sprintf(b.uri) }}{{ config.file_index }}">відкрити /{{ b.uri }}/</a></p>
+
+	<fieldset>
+		<legend>Дописи</legend>
+		<label>Ім'я аноніма <span class="unimportant">(ім'я тих, хто лишає поле порожнім; порожньо — сіре значення)</span>
+			<input type="text" name="anon" value="{{ anon|e }}" placeholder="{{ anon_default|e }}" maxlength="35"></label>
+		<label class="na-check"><input type="checkbox" name="translate" value="1"{% if translate %} checked{% endif %}>
+			Кнопка [translate] біля дописів <span class="unimportant">(переклад мовою браузера відвідувача)</span></label>
+		<label class="na-check"><input type="checkbox" name="fate" value="1"{% if fate %} checked{% endif %}>
+			«Спитати долю» <span class="unimportant">(галочка в «Параметрах» форми; у кінці такого допису часом з'являється вердикт долі:
+			«Потужно сказано!» 5%, ПЕРЕМОГА чи ЗРАДА по 4%, епічний успіх чи провал по 0,5%, решта 86% — без вердикту)</span></label>
+	</fieldset>
+
+	<fieldset>
+		<legend>Позначки</legend>
+		<label class="na-check"><input type="checkbox" name="flags" value="1"{% if flags %} checked{% endif %}>
+			Дописувач вибирає позначку біля свого імені зі списку</label>
+		{% if flags and can_flags %}<p><a href="?/nichan-flags/{{ b.uri }}"><i class="fa fa-flag-o"></i> Список позначок</a></p>{% endif %}
+	</fieldset>
+
+	<fieldset>
+		<legend>Геолокація</legend>
+		<p class="unimportant">Прапорець, який сайт сам ставить біля імені за IP-адресою дописувача. Записується в допис у момент публікації:
+			зміни стосуються нових дописів.</p>
+		<label class="na-check"><input type="radio" name="geo" value="0"{% if geo == 0 %} checked{% endif %}> вимкнена</label>
+		<label class="na-check"><input type="radio" name="geo" value="1"{% if geo == 1 %} checked{% endif %}> базова — прапор країни</label>
+		<label class="na-check"><input type="radio" name="geo" value="2"{% if geo == 2 %} checked{% endif %}> детальна — дописувачі з України отримують прапор області,
+			решта — прапор країни</label>
+		{% if geo == 2 and not city_db %}<p class="nichan-warn"><strong>База областей ще не завантажена</strong> — поки що всі отримують прапор країни.
+			На сервері виконайте <code>php tools/update-geoip.php</code> (≈60 МБ завантаження, ≈130 МБ на диску).</p>{% endif %}
+		<label class="na-check"><input type="checkbox" name="geo_required" value="1"{% if geo_required %} checked{% endif %}>
+			Обов'язкова <span class="unimportant">(інакше у формі є галочка «Без прапора»)</span></label>
+		<label>Підпис прапора <span class="unimportant">(підказка при наведенні з «Політик з»: у базовій — «Політик з PL» для всіх; у детальній — «Політик з Zeeland (Нідерланди)»
+			для інших країн, а в українців назва області; порожньо — назва країни)</span>
+			<input type="text" name="geo_text" value="{{ geo_text|e }}" placeholder="назва країни" maxlength="40"></label>
+		{% if geo and can_flags %}<p><a href="?/nichan-geo-flags/{{ b.uri }}"><i class="fa fa-flag"></i> Прапорці геолокації</a>
+			<span class="unimportant">— свої картинки для областей і країн{% if geo_own %} (задано: {{ geo_own }}){% endif %}</span></p>{% endif %}
+	</fieldset>
+
+	<p><input type="submit" value="Зберегти"></p>
+</form>

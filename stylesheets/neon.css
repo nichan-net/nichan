@@ -1,0 +1,52 @@
+/*
+ * neon: the old Nichan's neon style (old.nichan.net/b/css/neon.css, made for the previous engine),
+ * redone for this markup on top of the nichan style: glowing yellow links, grey rounded posts.
+ */
+@import url('dark_nich.css');
+
+body {
+  --nichan-tree-active: #b6ff00;
+  --nichan-gallery-background: #2c2c2c;
+  --nichan-gallery-border: #575757;
+  --nichan-gallery-tile: #252525;
+  --nichan-gallery-hover: #383838;
+  --nichan-gallery-selected: #ffcb00;
+  --nichan-gallery-button: #252525;
+  --nichan-gallery-button-text: #ffcb00;
+  background: #111 url('img/neon.png'); color: #FFFFFF; font-family: "Trebuchet MS", Trebuchet, sans-serif;
+}
+a, a:visited { color: #FFCB00; text-decoration: none; text-shadow: #000 2px 2px 4px; }
+a:hover, .intro a.post_no:hover { color: #EEFEBB; text-shadow: #FFDE22 0 0 15px; }
+hr { border: none; border-top: 1px solid #575757; }
+
+header h1, h1 { color: #CAE0F0; text-shadow: #000 0 -2px 1px, #fff 0 0 12px; }
+header div.subtitle { color: #AAAAAA; }
+div.blotter { color: #FFCB00; }
+
+div.post.reply { background: #2C2C2C; color: #EEEEEE; border: 1px solid #575757; border-radius: 5px; }
+div.post.reply.highlighted, div.post.reply:target { background: #2C2C2C; border: 2px dashed #FF0000; }
+div.post.reply.post-hover, .nichan-preview { background: #2C2C2C; border: 1px solid #575757; }
+.intro span.subject { color: #6699CC; font-weight: bold; }
+.intro span.name { color: #B4B9CD; font-weight: bold; }
+span.trip { color: #AAFFAA; font-weight: bold; }
+.intro a.post_no { color: #B6FF00; }
+span.quote { color: #789922; text-shadow: #000 1px 1px 1px; }
+span.heading { color: #48B0FD; }
+span.omitted, .unimportant, .unimportant * { color: #999999; }
+p.fileinfo { color: #999999; }
+p.fileinfo a { color: #789922; text-shadow: none; }
+div.post.reply span.spoiler, div.post.op span.spoiler { background: #575757; color: #575757; }
+div.post.reply span.spoiler:hover, div.post.op span.spoiler:hover { color: #48B0FD; }
+
+form table tr th { background: transparent; color: #AAAAAA; font-weight: bold; }
+input[type="text"], input[type="password"], textarea, select { background: #111; color: #FFF; border: 2px solid #545454; border-radius: 5px; }
+input[type="text"]:hover, textarea:hover { background: #151515; color: #EEEEEE; }
+input[type="submit"], button { background: #252525; color: #FFCB00; border: 1px solid #575757; border-radius: 5px; }
+
+div.pages, .pages.topleft, .pages.topright { background: #252525; color: #AAAAAA; border-bottom: 1px solid #5C5B7F; }
+div.pages a.selected { color: #B6FF00; }
+div.banner { background: url('img/neon-reply.png') #222 left center no-repeat; color: #006AB9; border: 1px solid #575757; border-radius: 6px; }
+
+.box { background: rgba(44, 44, 44, .92); border: 1px solid #575757; border-radius: 5px; color: #EEEEEE; }
+.box h2, .box.left h2, .box.images h2, .box.right h2 { background: #252525; color: #CAE0F0; }
+div.ban { background: #2C2C2C; border: 1px solid #575757; }

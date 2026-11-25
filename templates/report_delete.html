@@ -1,0 +1,51 @@
+{# Visitors report and delete posts from the menu next to each post number (js/nichan.js). #}
+{% if mod and mod|hasPermission(config.mod.delete, board.uri) %}
+<div id="post-moderation-fields">
+	{# Moderators: act on every ticked post at once; pages are rebuilt once at the end. #}
+	<div id="mod-mass-fields">
+		<button type="button" onclick="nichanToggleAll(this.form)">вибрати всі / зняти</button>
+		<span id="mod-mass-count"></span>
+		{% if mod|hasPermission(config.mod.ban, board.uri) %}
+		<label>бан:
+			<select name="mass_ban_length">
+				<option value="">без бану</option>
+				<option value="+1 hour">1 година</option>
+				<option value="+1 day">1 день</option>
+				<option value="+1 week">1 тиждень</option>
+				<option value="+30 days">30 днів</option>
+				<option value="forever">назавжди</option>
+			</select>
+		</label>
+		<input type="text" name="mass_ban_reason" size="16" placeholder="причина бану">
+		{% endif %}
+		<input type="hidden" name="return_to" value="">
+		<input type="hidden" name="file" value="">
+		<button type="button" data-action="?/{{ secure_link(board.dir ~ 'mass_delete') }}" onclick="nichanMassDelete(this, false)">Видалити відмічені</button>
+		{% if mod|hasPermission(config.mod.deletefile, board.uri) %}
+		<button type="button" data-action="?/{{ secure_link(board.dir ~ 'mass_delete') }}" onclick="nichanMassDelete(this, true)">Видалити файли у відмічених</button>
+		{% endif %}
+	</div>
+	<script type="text/javascript">
+	function nichanTicked(form) {
+		return Array.prototype.filter.call(form.querySelectorAll('input.delete[type=checkbox]'), function (c) { return c.checked; });
+	}
+	function nichanToggleAll(form) {
+		var boxes = form.querySelectorAll('input.delete[type=checkbox]');
+		var on = nichanTicked(form).length < boxes.length;
+		Array.prototype.forEach.call(boxes, function (c) { c.checked = on; });
+		document.getElementById('mod-mass-count').textContent = on ? '(' + boxes.length + ')' : '';
+	}
+	function nichanMassDelete(btn, filesOnly) {
+		var form = btn.form, n = nichanTicked(form).length;
+		if (!n) { alert('Нічого не відмічено.'); return; }
+		var what = filesOnly ? 'файли з ' + n + ' постів' : n + ' постів (з тредами, якщо серед них ОП)';
+		var ban = form.mass_ban_length && form.mass_ban_length.value ? ' і забанити авторів' : '';
+		if (!confirm('Видалити ' + what + ban + '?')) return;
+		form.file.value = filesOnly ? '1' : '';
+		form.return_to.value = location.search;
+		form.action = btn.getAttribute('data-action');
+		form.submit();
+	}
+	</script>
+</div>
+{% endif %}

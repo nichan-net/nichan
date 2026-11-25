@@ -1,0 +1,32 @@
+{% extends 'portal.html' %}
+{% block content %}
+<article class="nichan-news-page">
+	{% if not news %}
+		<p>Такої новини немає або вона вже в архіві.</p>
+	{% else %}
+		{% if archived %}<p class="nichan-news-archived">Ця новина в архіві, її бачать лише адміністратори й модератори.</p>{% endif %}
+		<div class="nichan-news-meta">{{ name|e }} · {{ news.time|ldate('d.m.Y H:i') }}</div>
+		{% if news.summary %}<p class="nichan-news-summary">{{ news.summary|e }}</p>{% endif %}
+		<div class="nichan-news-body">{{ news.body }}</div>
+		{% if news.discussion %}
+		<div class="nichan-news-discussion"><strong>Обговорення новини:</strong> <a href="{{ news.discussion.url }}">&gt;&gt;&gt;/{{ news.discussion.board }}/{{ news.discussion.id }}</a></div>
+		{% endif %}
+
+		{% if others %}
+		<div class="nichan-news-others">
+			<h2>Інші новини</h2>
+			<ul class="nichan-news-list">
+				{% for n in others %}
+				<li data-until="{{ n.until }}">
+					<a href="{{ config.root }}news.php?id={{ n.id }}">{{ n.subject|e }}</a>
+					<span class="nichan-news-date">{{ n.time|ldate('d.m.Y') }}</span>
+					{% if n.summary %}<div class="nichan-news-summary">{{ n.summary|e }}</div>{% endif %}
+				</li>
+				{% endfor %}
+			</ul>
+		</div>
+		{% endif %}
+	{% endif %}
+	<p><a href="{{ config.root }}">← На головну</a></p>
+</article>
+{% endblock %}

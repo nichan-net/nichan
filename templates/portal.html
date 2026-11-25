@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="{{ portal_en ? 'en' : 'uk' }}"{% if not classic_home %} class="portal-root"{% endif %}{% if portal_section == 'home' %} data-home-layout="{{ classic_home ? 'classic' : 'modern' }}" data-other-home="{{ (classic_home ? modern_url : classic_url)|e }}"{% endif %}>
+<head>
+	<meta charset="utf-8">
+	{% if portal_section == 'home' %}<script>
+	(function () {
+		var home = document.documentElement.dataset;
+		function followPreference() {
+			try {
+				var choice = localStorage.getItem('nichan_home_layout');
+				if ((choice === 'classic' || choice === 'modern') && choice !== home.homeLayout)
+					location.replace(home.otherHome + location.search + location.hash);
+			} catch (e) {}
+		}
+		followPreference();
+		window.addEventListener('pageshow', function (event) { if (event.persisted) followPreference(); });
+	})();
+	</script>{% endif %}
+	<title>{% if portal_section != 'home' %}{{ title|e }} — {% endif %}{{ config.nichan_site.name|e }}</title>
+	{% block metadata %}{% endblock %}
+	<script>var active_page = "{{ portal_section == 'home' ? 'recent' : 'page' }}";</script>
+	{% include 'header.html' with {'page_scripts': ['js/jquery.min.js', 'js/mobile-style.js', 'js/nichan.js'], 'board': false, 'is_front_page': true, 'nojavascript': false} %}
+</head>
+<body class="active-page {{ classic_home ? 'classic-home' : 'nichan-portal' }} portal-board-nav" data-stylesheet="{{ config.default_stylesheet.1|default('default')|e }}">
+	<a class="portal-skip" href="#portal-main">{{ portal_en ? 'Skip to content' : 'До вмісту' }}</a>
+	{% include 'board-menu.html' %}
+	<main id="portal-main">
+		{% block main %}
+		<div class="portal-cover"><div class="portal-width portal-heading"{% if config.nichan_site.header_image %} style="--portal-heading-image:url('{{ (config.root ~ config.nichan_site.header_image)|e('css') }}')"{% endif %}>
+			<h1>{{ portal_section == 'home' ? config.nichan_site.name|e : title|e }}</h1>
+			{% if portal_section == 'home' and config.nichan_site.home_subtitle|length %}<p>{{ config.nichan_site.home_subtitle|e }}</p>{% elseif subtitle %}<p>{{ subtitle|e }}</p>{% endif %}
+		</div></div>
+		<div class="portal-width portal-content">{% block content %}{{ body }}{% endblock %}</div>
+		{% endblock %}
+	</main>
+	{{ nichan_footer(config, portal_en|default(false)) }}
+</body>
+</html>

@@ -1,0 +1,118 @@
+/*
+ * The moderators' panel (mod.php): a menu on the left, the page on the right, cards, tidy tables and
+ * forms. Colours come from the chosen site style (only neutral tints are added), so it fits every style.
+ */
+
+body.nichan-admin > header h1 { font-size: 22px; margin: 6px 0 2px; }
+body.nichan-admin > header .subtitle { margin-bottom: 8px; }
+
+.na-layout { display: flex; gap: 18px; align-items: flex-start; max-width: 1400px; margin: 0 auto 30px; padding: 0 12px; box-sizing: border-box; text-align: left; }
+.na-main { flex: 1; min-width: 0; }
+
+/* ---- menu */
+.na-nav { position: sticky; top: 44px; width: 232px; flex: none; max-height: calc(100vh - 56px); overflow: auto; box-sizing: border-box;
+	padding: 8px; border: 1px solid rgba(128, 128, 128, .28); border-radius: 8px; background: rgba(128, 128, 128, .07); font-size: 14px; }
+.na-user { display: flex; align-items: center; gap: 6px; padding: 6px 8px 10px; border-bottom: 1px solid rgba(128, 128, 128, .25); margin-bottom: 4px; overflow: hidden; }
+.na-user strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.na-role { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: rgba(128, 128, 128, .28); white-space: nowrap; }
+.na-toggle { display: none; margin-left: auto; font-size: 18px; background: none; border: 0; color: inherit; cursor: pointer; padding: 2px 6px; }
+.na-group { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin: 14px 10px 4px; }
+.na-item { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 6px; text-decoration: none !important; line-height: 1.3; }
+.na-item:hover { background: rgba(128, 128, 128, .18); }
+.na-item.active { background: rgba(90, 157, 240, .22); font-weight: bold; }
+.na-item i { opacity: .8; }
+.na-count { margin-left: auto; font-size: 11px; min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 10px; background: rgba(128, 128, 128, .35); }
+.na-count.hot { background: #c9302c; color: #fff; }
+.na-site { margin-top: 6px; opacity: .8; }
+
+/* ---- page content: cards, tables, forms */
+.na-main fieldset { min-width: 0; box-sizing: border-box; max-width: 100%; border: 1px solid rgba(128, 128, 128, .3); border-radius: 8px; padding: 10px 14px 12px; margin: 0 0 16px; background: rgba(128, 128, 128, .04); }
+.na-main legend { font-weight: bold; padding: 0 6px; font-size: 15px; }
+.na-main table.modlog, .na-main table.mod { width: 100%; border-collapse: collapse; margin: 6px 0; }
+.na-main table.modlog th, .na-main table.modlog td, .na-main table.mod th, .na-main table.mod td { padding: 6px 8px; border: 0; border-bottom: 1px solid rgba(128, 128, 128, .22); vertical-align: top; text-align: left; }
+.na-main table.modlog th, .na-main table.mod th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; opacity: .75; }
+.na-main table.modlog tr:hover td { background: rgba(128, 128, 128, .07); }
+.na-main table.modlog form { margin: 0; }
+.na-main input[type=text], .na-main input[type=password], .na-main input[type=number], .na-main input[type=search], .na-main input[type=datetime-local], .na-main select, .na-main textarea {
+	padding: 5px 7px; border-radius: 5px; border: 1px solid rgba(128, 128, 128, .5); box-sizing: border-box; max-width: 100%; font: inherit; }
+.na-main input[type=submit], .na-main button, .na-main .nichan-button { padding: 5px 12px; border-radius: 5px; border: 1px solid rgba(128, 128, 128, .55);
+	cursor: pointer; font: inherit; background: rgba(128, 128, 128, .15); color: inherit; }
+.na-main input[type=submit]:hover, .na-main button:hover, .na-main .nichan-button:hover { background: rgba(128, 128, 128, .28); }
+.na-main ul { padding-left: 20px; }
+.na-main p.unimportant, .na-main .unimportant { opacity: .85; }
+
+/* ---- dashboard */
+.na-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.na-tile { display: block; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(128, 128, 128, .3); background: rgba(128, 128, 128, .06); text-decoration: none !important; color: inherit; }
+.na-tile:hover { background: rgba(128, 128, 128, .14); }
+.na-tile .n { font-size: 26px; font-weight: bold; line-height: 1.1; }
+.na-tile .l { font-size: 13px; opacity: .8; margin-top: 2px; }
+.na-tile.hot { border-color: #c9302c; background: rgba(201, 48, 44, .12); }
+.na-tile.hot .n { color: #e0463f; }
+.na-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.na-boards td.n { text-align: center; white-space: nowrap; }
+.na-boards .acts a { margin-right: 8px; white-space: nowrap; }
+.na-tip { font-size: 13px; opacity: .8; margin-top: 4px; }
+
+@media only screen and (max-width: 860px) {
+	.na-layout { flex-direction: column; align-items: stretch; gap: 10px; padding: 0 8px; }
+	.na-main { width: 100%; }
+	.na-main p, .na-main label { overflow-wrap: anywhere; }
+	.na-nav { position: static; width: 100%; max-height: none; }
+	.na-toggle { display: block; }
+	.na-nav:not(.open) .na-groups { display: none; }
+	.na-user { border-bottom: 0; margin-bottom: 0; padding-bottom: 6px; }
+	.na-cols { grid-template-columns: minmax(0, 1fr); }
+	.na-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+	.na-tile { padding: 8px 10px; }
+	.na-tile .n { font-size: 22px; }
+	.na-main table.modlog { display: block; overflow-x: auto; }
+}
+
+/* ---- a form of labelled full-width fields (news) */
+.na-form label { display: block; margin: 0 0 10px; font-weight: bold; }
+.na-form label .unimportant { font-weight: normal; }
+.na-form label input[type=text], .na-form label textarea, .na-form label input[type=datetime-local] { display: block; width: 100%; margin-top: 3px; font-weight: normal; }
+/* a checkbox or radio with its text on one line */
+.na-form label.na-check { font-weight: normal; margin-bottom: 6px; }
+.na-form .nichan-warn { padding: 6px 10px; border-left: 3px solid #c90; background: rgba(204, 153, 0, .12); }
+.na-news { padding: 8px 0 10px; border-bottom: 1px solid rgba(128, 128, 128, .22); }
+.na-news:last-of-type { border-bottom: 0; }
+.na-news h3 { margin: 0 0 2px; font-size: 15px; }
+.na-news p { margin: 6px 0; }
+.na-news-acts { float: right; }
+.na-news-acts a { margin-left: 10px; }
+.na-news-body { max-height: 8em; overflow: auto; }
+
+/* ---- threads waiting for a moderator (mod.php?/nichan-pending) */
+.np-card { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(128, 128, 128, .3); }
+.np-thumb { width: 80px; height: 80px; object-fit: cover; flex: none; display: block; }
+.np-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.np-more > summary { display: inline-block; cursor: pointer; margin: 5px 0 2px; padding: 2px 10px; border: 1px solid rgba(128, 128, 128, .55); border-radius: 5px; font-size: 13px; list-style: none; }
+.np-more > summary::-webkit-details-marker { display: none; }
+.np-more > summary:hover { background: rgba(128, 128, 128, .18); }
+.np-more:not([open]) .np-close, .np-more[open] .np-open { display: none; }
+.np-text:has(.np-more[open]) .np-short { display: none; }
+.np-body { margin: 6px 0 0; padding: 6px 10px; border: 1px solid rgba(128, 128, 128, .3); border-radius: 6px; max-height: 60vh; overflow: auto; }
+.np-body .body { margin: 0; }
+.np-files { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.np-file { display: flex; flex-direction: column; align-items: center; width: 130px; text-align: center; font-size: 12px; text-decoration: none !important; }
+.np-file img, .np-nothumb { width: 120px; height: 120px; object-fit: contain; background: rgba(128, 128, 128, .12); border-radius: 4px; }
+.np-nothumb { display: flex; align-items: center; justify-content: center; font-size: 13px; gap: 4px; }
+.np-fname { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+
+/* ---- rules by country (mod.php?/nichan-countries) */
+.nc-table td { vertical-align: middle; }
+.nc-board { border-right: 1px solid rgba(128, 128, 128, .22); min-width: 130px; }
+.nc-board-first td { border-top: 1px solid rgba(128, 128, 128, .45); }
+.nc-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.nc-list { display: contents; }
+.nc-chip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 4px 1px 8px; border-radius: 12px; background: rgba(90, 157, 240, .22); font-size: 13px; white-space: nowrap; }
+.nc-x { text-decoration: none !important; font-weight: bold; padding: 0 4px; opacity: .8; }
+.nc-x:hover { opacity: 1; color: #e0463f; }
+.nc-add { max-width: 190px; }
+.nc-switch { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.nc-inner { border: 0 !important; padding: 0 !important; margin: 0 !important; background: none !important; }
+.nc-off .nc-table { opacity: .45; }
+.na-news-thread { margin: 8px 0 2px; font-size: 13px; }
+.na-news-thread input[type=text] { width: auto; display: inline-block; }

@@ -1,0 +1,12 @@
+{# «Спитати долю»: fate's word at the end of the post (post.php draws it; the style's greentext colour, italic) #}
+{% if post.modifiers['nichan fate'] %}
+	{% set fate_en = config.locale starts with 'en' %}
+	{% set fate = post.modifiers['nichan fate'] %}
+	<div class="nichan-fate"><span class="quote">{%
+		if fate == 'mighty' %}{{ fate_en ? 'Mightily said!' : 'Потужно сказано!' }}{%
+		elseif fate == 'victory' %}{{ fate_en ? 'Fate hears a VICTORY in this post!' : 'Доля чує в дописі ПЕРЕМОГУ!' }}{%
+		elseif fate == 'betrayal' %}{{ fate_en ? 'Fate hears a BETRAYAL in this post!' : 'Доля чує в дописі ЗРАДУ!' }}{%
+		elseif fate == 'epicfail' %}{{ fate_en ? 'Fate sees an epic fail.' : 'Доля вбачає епічний провал.' }}{%
+		elseif fate == 'epicwin' %}{{ fate_en ? 'Fate sees an epic win.' : 'Доля вбачає епічний успіх.' }}{%
+		endif %}</span></div>
+{% endif %}

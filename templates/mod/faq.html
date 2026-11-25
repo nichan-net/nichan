@@ -1,0 +1,32 @@
+<div style="max-width:1100px;margin:0 auto;padding:0 8px">
+	<p style="text-align:center">
+		<a href="?/edit_pages">← Статичні сторінки</a> · <a href="{{ url|e }}" target="_blank" rel="noopener">Відкрити сторінку</a>
+	</p>
+	<form action="?/{{ route|e }}" method="post" id="faq-form">
+		<input type="hidden" name="token" value="{{ token }}">
+		<p class="unimportant">Текст сторінки в HTML. Заголовки розділів – <code>&lt;h2&gt;</code>, абзаци – <code>&lt;p&gt;</code>,
+			списки визначень – <code>&lt;dl&gt;&lt;dt&gt;…&lt;/dt&gt;&lt;dd&gt;…&lt;/dd&gt;&lt;/dl&gt;</code>. Праворуч (або нижче на телефоні) – попередній перегляд.</p>
+		<div class="faq-editor">
+			<textarea name="faq_html" id="faq-html" spellcheck="false">{{ html|e }}</textarea>
+			<iframe id="faq-preview" sandbox title="Попередній перегляд"></iframe>
+		</div>
+		<p style="text-align:center">
+			<input type="submit" value="Зберегти">
+			<input type="submit" name="reset" value="Повернути стандартний текст" onclick="return confirm('Замінити текст стандартним?')">
+		</p>
+	</form>
+</div>
+<style>
+	.faq-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+	#faq-html { width: 100%; min-height: 70vh; box-sizing: border-box; font-family: monospace; font-size: 13px; }
+	#faq-preview { width:100%; min-height:40vh; box-sizing:border-box; border:1px dashed rgba(128,128,128,.5); background:white; }
+	@media (max-width: 768px) { .faq-editor { grid-template-columns: 1fr; } #faq-html { min-height: 40vh; } }
+</style>
+<script>
+(function () {
+	var src = document.getElementById('faq-html'), out = document.getElementById('faq-preview'), t;
+	function render() { out.srcdoc = src.value; }
+	src.addEventListener('input', function () { clearTimeout(t); t = setTimeout(render, 250); });
+	render();
+})();
+</script>

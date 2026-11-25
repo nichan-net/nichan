@@ -1,0 +1,78 @@
+{% extends 'portal.html' %}
+{% macro feed_row(item, thread) %}
+	{% set timestamp = thread ? item.bump : item.time %}
+	{% set subject = thread ? item.subject : item.thread_subject %}
+	<li>
+		<a class="portal-feed-row" href="{{ item.link|e }}">
+			<span><small>/{{ item.board|e }}/ · {% if thread %}Бамп {% endif %}<time datetime="{{ timestamp|ldate('c') }}">{{ timestamp|ldate('d.m H:i') }}</time> · №{{ item.id }}{% if subject|length %} · {{ subject|e }}{% endif %}</small>
+				{% if item.snippet_html|length %}<span class="portal-excerpt">{{ item.snippet_html|raw }}</span>{% elseif not thread %}<span class="portal-excerpt"><em>{{ item.snippet|e }}</em></span>{% elseif not subject|length %}<span class="portal-excerpt"><em>Нитка №{{ item.id }}</em></span>{% endif %}
+			</span>
+			{% if item.thumbs %}<span class="portal-thumbs">{% for src in item.thumbs %}<img src="{{ src|e }}" width="48" height="48" loading="lazy" decoding="async" alt="">{% endfor %}</span>{% endif %}
+		</a>
+	</li>
+{% endmacro %}
+{% block metadata %}
+	<meta property="og:site_name" content="{{ config.nichan_site.name|e }}">
+	<meta property="og:title" content="{{ config.nichan_site.name|e }} - {{ config.nichan_site.tagline|e }}">
+	<meta property="og:description" content="{{ config.nichan_site.description|e }}">
+	<meta property="og:type" content="website">
+	<meta property="og:image" content="{{ config.nichan_public_url|e }}{{ config.nichan_site.image|e }}">
+	<meta name="description" content="{{ config.nichan_site.description|e }}">
+	<meta name="twitter:card" content="summary">
+	{% if config.nichan_site.twitter %}<meta name="twitter:site" content="{{ config.nichan_site.twitter|e }}">{% endif %}
+	<meta name="twitter:title" content="{{ config.nichan_site.name|e }} - {{ config.nichan_site.tagline|e }}">
+	<meta name="twitter:description" content="{{ config.nichan_site.description|e }}">
+	<meta name="twitter:image" content="{{ config.nichan_public_url|e }}{{ config.nichan_site.image|e }}">
+{% endblock %}
+{% block content %}
+{% import _self as feed %}
+<div class="portal-home">
+	<aside class="portal-side">
+		<section class="portal-directory">
+			<h2>Дошки</h2>
+			<ul>{% for b in boards %}<li><a href="{{ config.root }}{{ b.uri|e }}/"><b>/{{ b.uri|e }}/</b> {{ b.title|e }}</a><span class="nichan-board-online unimportant" data-board="{{ b.uri|e }}"></span></li>{% endfor %}
+				<li><a href="{{ config.root }}all/"><b>/all/</b> Усі дошки</a></li>
+			</ul>
+			<small class="nichan-online" style="display:none">Зараз на сайті: <strong data-online="site"></strong></small>
+		</section>
+		<div id="front-news">{% if news %}
+			<section class="nichan-front-news" aria-label="Новини">
+				<ul class="nichan-news-list">{% for n in news %}
+					<li data-until="{{ n.until }}"><time datetime="{{ n.time|ldate('c') }}">{{ n.time|ldate('d.m.Y') }}</time>
+						<a href="{{ config.root }}news.php?id={{ n.id }}">{{ n.subject|e }}</a>
+						{% if n.summary %}<p>{{ n.summary|e }}</p>{% endif %}
+					</li>
+				{% endfor %}</ul>
+			</section>
+		{% endif %}</div>
+	</aside>
+	<div class="portal-stream">
+		<section class="nichan-since" id="since" aria-labelledby="since-title" hidden></section>
+		<div id="front-popular">{% if popular.threads %}
+			<section class="portal-popular" data-expires="{{ popular.expires }}" aria-labelledby="front-popular-title">
+				<h2 id="front-popular-title">Популярні нитки</h2>
+				<ul>{% for t in popular.threads %}
+					<li><a class="portal-popular-row" href="{{ t.link|e }}">
+						<span class="portal-popular-board" title="{{ t.board_title|e }}">/{{ t.board|e }}/</span>
+						<span>{{ (t.subject ?: t.snippet ?: 'Нитка №' ~ t.id)|e }}{% if t.bumplimit %} <small>(бампліміт)</small>{% endif %}</span>
+						<span class="portal-popular-count">+{{ t.recent }}</span>
+					</a></li>
+				{% endfor %}</ul>
+			</section>
+		{% endif %}</div>
+		<fieldset class="portal-feed">
+			<legend class="portal-visually-hidden">Стрічка</legend>
+			<input type="radio" name="feed" id="feed-posts" checked aria-controls="front-posts"><label for="feed-posts">Дописи</label>
+			<input type="radio" name="feed" id="feed-threads" aria-controls="front-threads"><label for="feed-threads">Нитки</label>
+			<section class="portal-list" aria-label="Дописи" id="front-posts">
+				<ul>{% for post in recent_posts %}{{ feed.feed_row(post, false) }}
+			{% else %}<li>Дописи ще не з’явилися.</li>{% endfor %}</ul>
+			</section>
+			<section class="portal-list" aria-label="Нитки" id="front-threads">
+				<ul>{% for t in threads %}{{ feed.feed_row(t, true) }}
+			{% else %}<li>Ниток поки немає.</li>{% endfor %}</ul>
+			</section>
+		</fieldset>
+	</div>
+</div>
+{% endblock %}

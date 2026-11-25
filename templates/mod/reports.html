@@ -1,0 +1,56 @@
+{% if items %}
+<div class="nr-list">
+	{% for it in items %}
+	<div class="nr-card">
+		<a class="nr-thumb" href="{{ it.link }}">{% if it.thumb %}<img src="{{ it.thumb }}" alt="" loading="lazy">{% elseif it.files|length %}<span class="nr-file">{{ it.files.0.ext }}</span>{% else %}<span class="nr-file">текст</span>{% endif %}</a>
+		<div class="nr-main">
+			<div class="nr-head">
+				<a href="{{ it.link }}"><b>/{{ it.board }}/{{ it.post.id }}</b></a>{% if not it.post.thread %} <span class="unimportant">(ОП нитки)</span>{% endif %}
+				<span class="unimportant">· пост {{ it.post.time|ago }} тому</span>
+				{% if mod|hasPermission(config.mod.show_ip, it.board) %}<span class="unimportant">· автор <a href="?/IP/{{ it.post.ip }}">{{ it.post.ip }}</a></span>{% endif %}
+				{% if it.notes_count %}<div class="nr-notes">📝 {% for n in it.notes %}<span title="{{ n.time|date('d.m.Y H:i') }}">{{ n.body|striptags|slice(0, 120)|e }}</span>{% if not loop.last %} · {% endif %}{% endfor %}{% if it.notes_count > it.notes|length %} <a href="?/IP/{{ it.post.ip }}">ще {{ it.notes_count - it.notes|length }}</a>{% endif %}</div>{% endif %}
+				{% if it.files|length > 1 %}<span class="unimportant">· файлів: {{ it.files|length }}</span>{% endif %}
+			</div>
+			<div class="nr-text">{{ it.preview|e }}{% if not it.preview %}<span class="unimportant">(без тексту)</span>{% endif %}</div>
+			{% if it.long %}<details class="nr-full"><summary class="unimportant">увесь текст</summary><div class="body">{{ it.post.body }}</div></details>{% endif %}
+			<ul class="nr-reasons">
+				{% for r in it.reports %}
+				<li>
+					<b>{{ r.reason ? r.reason|e : '(без причини)' }}</b>
+					<span class="unimportant">— {{ r.time|ago }} тому{% if mod|hasPermission(config.mod.show_ip, it.board) %}, від <a href="?/IP/{{ r.ip }}">{{ r.ip }}</a>{% endif %}</span>
+					{% if mod|hasPermission(config.mod.report_dismiss, it.board) %}<a class="nr-btn" href="?/reports/{{ r.id }}/dismiss/{{ r.token }}" title="Відхилити цю скаргу">Відхилити</a>{% endif %}
+					{% if mod|hasPermission(config.mod.report_dismiss_ip, it.board) %}<a class="nr-btn" href="?/reports/{{ r.id }}/dismissall/{{ r.token_all }}" title="Відхилити всі скарги від цієї IP-адреси">всі від IP</a>{% endif %}
+				</li>
+				{% endfor %}
+			</ul>
+			<div class="nr-actions">
+				{% if mod|hasPermission(config.mod.delete, it.board) %}<a class="nr-btn nr-danger" href="?/reports/{{ it.reports.0.id }}/delete/{{ it.token_delete }}" onclick="return confirm('Видалити пост /{{ it.board }}/{{ it.post.id }}{% if not it.post.thread %} разом з усією ниткою{% endif %}?')">Видалити пост</a>{% endif %}
+				{% if mod|hasPermission(config.mod.ban, it.board) %}<a class="nr-btn" href="?/{{ it.board }}/ban/{{ it.post.id }}">Бан</a>{% endif %}
+				{% if mod|hasPermission(config.mod.bandelete, it.board) %}<a class="nr-btn nr-danger" href="?/{{ it.board }}/ban&amp;delete/{{ it.post.id }}">Видалити й забанити</a>{% endif %}
+				{% if mod|hasPermission(config.mod.nichan_ban_file, it.board) %}{% for f in it.files %}{% if f.hash %}<a class="nr-btn" href="?/{{ it.board }}/banfile/{{ it.post.id }}/{{ f.index }}" title="Заборонити файл{% if it.files|length > 1 %} №{{ loop.index }}{% endif %} на сайті">⛔ файл{% if it.files|length > 1 %} {{ loop.index }}{% endif %}</a>{% endif %}{% endfor %}{% endif %}
+			</div>
+		</div>
+	</div>
+	{% endfor %}
+</div>
+{% else %}
+	<p style="text-align:center" class="unimportant">Скарг немає.</p>
+{% endif %}
+<style>
+	.nr-list { max-width: 1000px; margin: 0 auto; padding: 0 6px; }
+	.nr-notes { font-size: 12px; margin: 2px 0; padding: 2px 6px; border-left: 3px solid #e0a000; }
+	.nr-card { display: flex; gap: 10px; padding: 8px 4px; border-bottom: 1px solid rgba(128,128,128,.3); }
+	.nr-thumb { flex: 0 0 64px; }
+	.nr-thumb img { width: 64px; height: 64px; object-fit: cover; border-radius: 3px; display: block; }
+	.nr-file { display: flex; width: 64px; height: 64px; align-items: center; justify-content: center; border: 1px solid rgba(128,128,128,.4); border-radius: 3px; font-size: 85%; opacity: .8; }
+	.nr-main { flex: 1; min-width: 0; }
+	.nr-head { margin-bottom: 2px; }
+	.nr-text { overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.nr-full .body { max-height: 320px; overflow: auto; margin: 4px 0; }
+	.nr-reasons { list-style: none; margin: 4px 0; padding: 0; }
+	.nr-reasons li { margin: 2px 0; }
+	.nr-actions { margin-top: 4px; }
+	.nr-btn { display: inline-block; margin: 2px 6px 2px 0; padding: 1px 8px; border: 1px solid rgba(128,128,128,.5); border-radius: 3px; text-decoration: none; font-size: 90%; }
+	.nr-danger { border-color: rgba(200,70,70,.7); }
+	.nr-reasons .nr-btn { margin-left: 6px; }
+</style>

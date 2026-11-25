@@ -1,0 +1,63 @@
+{% macro field(name, label, hint, values, defaults, multiline) %}
+	<label>{{ label }}{% if hint %} <span class="unimportant">({{ hint }})</span>{% endif %}
+		{% if multiline %}<textarea name="{{ name }}" rows="3" placeholder="{{ defaults[name]|e|replace({"\n":"&#10;"}) }}">{{ values[name]|e|replace({"\n":"&#10;"}) }}</textarea>
+		{% else %}<input type="text" name="{{ name }}" value="{{ values[name]|e }}" placeholder="{{ defaults[name]|e }}">{% endif %}
+	</label>
+{% endmacro %}
+{% import _self as f %}
+
+<form method="post" action="?/nichan-site" class="na-form" enctype="multipart/form-data">
+	<input type="hidden" name="token" value="{{ token }}">
+	<p class="unimportant">Щоб повернути стандартне значення текстового поля, очисть його й збережи зміни.</p>
+
+	<fieldset>
+		<legend>Назва й головна сторінка</legend>
+		{{ f.field('name', 'Назва сайту', 'заголовок головної та назва вебзастосунку', values, defaults) }}
+		{{ f.field('name_en', 'Назва англійською', 'для англомовних дошок', values, defaults) }}
+		{{ f.field('home_subtitle', 'Текст під назвою на головній', 'введи «-», щоб приховати рядок', values, defaults) }}
+		<label>Зображення в шапці головної та службових сторінок
+			<img src="{{ (config.root ~ (config.nichan_site.header_image|default('images/dn.png')))|e }}" alt="Поточне зображення шапки" style="display:block;width:225px;max-width:100%;height:67px;object-fit:cover;object-position:center 27%;margin:6px 0">
+			<input type="file" name="header_image" accept="image/png,image/jpeg,image/webp,image/gif" aria-describedby="header-image-hint">
+		</label>
+		<p id="header-image-hint" class="unimportant">PNG, JPEG, WebP або GIF до 2 МБ. Найкраще підійде широке зображення.</p>
+		{% if config.nichan_site.header_image %}<label class="na-check"><input type="checkbox" name="reset_header_image" value="1"> Повернути стандартне зображення</label>{% endif %}
+		<p><a href="?/nichan-front">Налаштувати стрічку й популярні нитки</a></p>
+	</fieldset>
+
+	<fieldset>
+		<legend>Верхнє меню й футер</legend>
+		{{ f.field('menu', 'Додаткові посилання у верхньому меню', 'праворуч, перед налаштуваннями', values, defaults, true) }}
+		<p class="unimportant">Одне посилання на рядок у форматі <code>підпис | адреса | підказка</code>. Для іконки вкажи клас, наприклад <code>fa-paper-plane</code>. Введи «-», щоб прибрати додаткові посилання.</p>
+		{% if mod|hasPermission(config.mod.nichan_board_visibility) %}<p><a href="?/nichan-boards">Змінити порядок і видимість дошок у меню</a></p>{% endif %}
+		{{ f.field('footer', 'Текст ліворуч у футері', 'кожен рядок виводиться окремо, перед згадкою Tinyboard і Vichan', values, defaults, true) }}
+		{% if mod|hasPermission(config.mod.nichan_edit_faq) %}<p>Обидві версії FAQ та «Цікавинки» можна редагувати в розділі <a href="?/edit_pages">«Статичні сторінки»</a>.</p>{% endif %}
+	</fieldset>
+
+	<fieldset>
+		<legend>Адреса сайту й прев’ю посилань</legend>
+		{{ f.field('public_url', 'Публічна адреса сайту', 'протокол і домен, наприклад https://example.com', values, defaults) }}
+		{{ f.field('tagline', 'Короткий опис у прев’ю', 'після назви в картці головної та в описі українських дошок', values, defaults) }}
+		{{ f.field('tagline_en', 'Короткий опис англійською', 'для прев’ю англомовних дошок', values, defaults) }}
+		{{ f.field('description', 'Повний опис', 'для прев’ю головної та вебзастосунку', values, defaults) }}
+		{{ f.field('image', 'Зображення для прев’ю головної та дошок', 'шлях від кореня сайту', values, defaults) }}
+		{{ f.field('twitter', 'Акаунт у X / Twitter', 'для карток посилань, наприклад @name', values, defaults) }}
+	</fieldset>
+
+	<fieldset>
+		<legend>Вигляд дошок</legend>
+		<label>Початковий вигляд <span class="unimportant">(для відвідувачів, які ще не обрали свій вигляд дошок)</span>
+			<select name="board_view" style="display:block;margin-top:3px">
+				<option value="standard"{% if board_view != 'compact' %} selected{% endif %}>стандартний</option>
+				<option value="compact"{% if board_view == 'compact' %} selected{% endif %}>стиснутий</option>
+			</select></label>
+	</fieldset>
+
+	<fieldset>
+		<legend>Демотиватори й меми</legend>
+		<label class="na-check"><input type="checkbox" name="dm_watermark_optional" value="1"{% if dm_watermark_optional %} checked{% endif %}>
+			Дозволити відвідувачам прибирати підпис «{{ config.nichan_site.host|e }}» із зображення</label>
+	</fieldset>
+
+	<p><input type="submit" value="Зберегти"></p>
+	<p class="unimportant">Головна та службові сторінки показують зміни після збереження. Для вже згенерованих сторінок дошок і ниток потрібна {% if mod|hasPermission(config.mod.rebuild) %}<a href="?/rebuild">перебудова сторінок</a>{% else %}перебудова сторінок{% endif %}.</p>
+</form>

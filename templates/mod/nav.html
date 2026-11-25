@@ -1,0 +1,56 @@
+{# The panel's menu on every page of mod.php (mod_page()): grouped, with counters, only what the account may use. #}
+{% macro item(href, label, icon, current, count, strong) %}
+	<a href="?/{{ href }}" class="na-item{% if current == href or (href and current starts with href ~ '/') %} active{% endif %}"><i class="fa fa-{{ icon }} fa-fw"></i><span>{{ label }}</span>{% if count %}<b class="na-count{% if strong %} hot{% endif %}">{{ count }}</b>{% endif %}</a>
+{% endmacro %}
+{% import _self as m %}
+<nav class="na-nav" id="na-nav">
+	<div class="na-user">
+		<i class="fa fa-user fa-fw"></i> <strong>{{ mod.username|e }}</strong>
+		<span class="na-role">{{ role }}</span>
+		<button type="button" class="na-toggle" onclick="document.getElementById('na-nav').classList.toggle('open')" title="Меню"><i class="fa fa-bars"></i></button>
+	</div>
+	<div class="na-groups">
+		{{ m.item('', 'Головна панелі', 'tachometer', current) }}
+
+		<div class="na-group">Модерація</div>
+		{% if mod|hasPermission(config.mod.reports) %}{{ m.item('reports', 'Скарги', 'flag', current, counts.reports, true) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_premod) %}{{ m.item('nichan-pending', 'Нитки на перевірці', 'hourglass-half', current, counts.pending, true) }}{% endif %}
+		{% if mod|hasPermission(config.mod.recent) %}{{ m.item('recent/50', 'Останні дописи', 'clock-o', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.view_banlist) %}{{ m.item('bans', 'Бани', 'ban', current) }}{% endif %}
+		{% if config.ban_appeals and mod|hasPermission(config.mod.view_ban_appeals) %}{{ m.item('ban-appeals', 'Апеляції', 'gavel', current, counts.appeals, true) }}{% endif %}
+		{% if mod|hasPermission(config.mod.modlog) %}{{ m.item('log', 'Журнал модерації', 'list-alt', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_modstats) %}{{ m.item('nichan-modstats', 'Статистика модерації', 'bar-chart', current) }}{% endif %}
+
+		{% if mod|hasPermission(config.mod.nichan_filters) or mod|hasPermission(config.mod.nichan_ban_file) or mod|hasPermission(config.mod.nichan_trips) or mod|hasPermission(config.mod.nichan_country_block) %}
+		<div class="na-group">Захист</div>
+		{% if mod|hasPermission(config.mod.nichan_filters) %}
+			{{ m.item('nichan-words', 'Заборонені слова', 'filter', current) }}
+			{{ m.item('nichan-filters', 'Флуд і рейди', 'shield', current) }}
+		{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_ban_file) %}{{ m.item('nichan-banned-files', 'Заборонені файли', 'file-image-o', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_trips) %}{{ m.item('nichan-trips', 'Тріпкоди', 'key', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_country_block) %}{{ m.item('nichan-countries', 'Правила за країною', 'globe', current) }}{% endif %}
+		{% endif %}
+
+		<div class="na-group">Дошки й сайт</div>
+		{% if mod|hasPermission(config.mod.nichan_close_board) or mod|hasPermission(config.mod.nichan_captcha) or mod|hasPermission(config.mod.nichan_board_visibility) %}{{ m.item('nichan-boards', 'Налаштування дошок', 'sliders', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_messages) %}{{ m.item('nichan-messages', 'Повідомлення під формою', 'bullhorn', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_banners) %}{{ m.item('nichan-banners', 'Банери', 'picture-o', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_visits) %}{{ m.item('nichan-visits', 'Журнал відвідувань', 'eye', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_filters) %}{{ m.item('nichan-archive', 'Архів ниток', 'archive', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_front) %}{{ m.item('nichan-front', 'Головна сторінка', 'home', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_front) %}{{ m.item('nichan-site', 'Сайт: назва й меню', 'id-card-o', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.nichan_edit_faq) or ('*' in mod.boards and mod|hasPermission(config.mod.edit_pages)) %}{{ m.item('edit_pages', 'Статичні сторінки', 'file-text-o', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.news) or mod|hasPermission(config.mod.nichan_news_archive) %}{{ m.item('edit_news', 'Новини', 'newspaper-o', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.themes) %}{{ m.item('themes', 'Теми', 'paint-brush', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.rebuild) %}{{ m.item('rebuild', 'Перебудувати сторінки', 'refresh', current) }}{% endif %}
+		{% if mod|hasPermission(config.mod.newboard) %}{{ m.item('new-board', 'Нова дошка', 'plus-square-o', current) }}{% endif %}
+
+		<div class="na-group">Команда</div>
+		{% if mod|hasPermission(config.mod.noticeboard) %}{{ m.item('noticeboard', 'Дошка оголошень', 'thumb-tack', current) }}{% endif %}
+		{{ m.item('inbox', 'Особисті повідомлення', 'envelope-o', current, counts.pms, true) }}
+		{% if mod|hasPermission(config.mod.manageusers) %}{{ m.item('users', 'Користувачі', 'users', current) }}{% elseif mod|hasPermission(config.mod.change_password) %}{{ m.item('users/' ~ mod.id, 'Змінити пароль', 'lock', current) }}{% endif %}
+		<a href="?/logout/{{ logout_token }}" class="na-item" onclick="return confirm('Вийти з панелі на всіх пристроях?')"><i class="fa fa-sign-out fa-fw"></i><span>Вийти</span></a>
+		<a href="/" class="na-item na-site" target="_blank"><i class="fa fa-external-link fa-fw"></i><span>Відкрити сайт</span></a>
+	</div>
+</nav>

@@ -1,0 +1,21 @@
+<fieldset>
+	<legend>Редагувати новину</legend>
+	<p class="unimportant">Дата публікації й місце в списку новин не змінюються.{% if not news.body_raw %} Цю новину збережено до того, як сайт почав тримати
+		її вихідний текст, тож текст відновлено з готової сторінки: перевірте розмітку перед збереженням.{% endif %}</p>
+	<form action="?/edit_news/edit/{{ news.id }}" method="post" class="na-form nichan-news-form">
+		<input type="hidden" name="token" value="{{ token }}">
+		<label>Ім'я <span class="unimportant">(порожнє — «Admin»)</span>
+			<input type="text" name="name" maxlength="50" value="{{ news.name|e }}" placeholder="Admin"></label>
+		<label>Тема
+			<input type="text" name="subject" maxlength="200" value="{{ news.subject|e }}" required></label>
+		<label>Короткий опис <span class="unimportant">(на головній і під іншими новинами)</span>
+			<input type="text" name="summary" maxlength="400" value="{{ news.summary|e }}"></label>
+		<label>Текст новини <span class="unimportant">(розмітка як у дописах)</span>
+			<textarea name="body" rows="10" required>{{ source|e }}</textarea></label>
+		<label>Обговорення новини <span class="unimportant">(нитка: дошка/номер, напр. n/123, або її адреса; порожньо — без обговорення)</span>
+			<input type="text" name="thread" maxlength="200" value="{{ thread|e }}" placeholder="n/123"></label>
+		<label>Активна до <span class="unimportant">(порожнє — доки не деактивуєте)</span>
+			<input type="datetime-local" name="until" value="{{ until }}" style="width:auto"></label>
+		<p><input type="submit" value="Зберегти"> <a href="?/edit_news#{{ news.id }}">скасувати</a></p>
+	</form>
+</fieldset>

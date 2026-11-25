@@ -1,0 +1,709 @@
+/* Ubuntu is declared in the shared style.css, including during theme switches. */
+body {
+  --nichan-tree-active: #669900;
+  --nichan-gallery-background: #161616;
+  --nichan-gallery-border: #555;
+  --nichan-gallery-tile: #202020;
+  --nichan-gallery-hover: #303030;
+  --nichan-gallery-selected: #6699cc;
+  --nichan-gallery-button: #202020;
+  --nichan-gallery-button-text: #c5c8c6;
+  background: #000000;
+  background-image: url('img/nichanball-full.png');
+	background-repeat: no-repeat;
+    background-attachment: fixed;
+	background-position: right bottom;
+	color: #C5C8C6;
+	font-family: Ubuntu;
+	font-size: 10pt;
+	margin: 0 8px;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+table * {
+	margin: 0;
+}
+a, a:visited {
+	text-decoration: none;
+	color: #FFFFFF;
+}
+a:hover, .intro a.post_no:hover {
+	color: #A0A0A0
+}
+a.post_no {
+	text-decoration: none;
+	margin: 0;
+	padding: 0;
+}
+.intro a.post_no {
+	color: inherit;
+}
+.intro a.post_no, p.intro a.email {
+	margin: 0;
+}
+.intro a.email span.name {
+	color: #FFFFFF;
+}
+.intro a.email:hover span.name {
+	color: #A0A0A0;
+}
+.intro label {
+	display: inline;
+}
+h2 {
+	color: #CC0000;
+	font-size: 11pt;
+	margin: 0;
+	padding: 0;
+}
+header {
+	margin: 1em 0;
+}
+h1 {
+	font-family: Ubuntu;
+	letter-spacing: -2px;
+	font-size: 20pt;
+	margin: 0;
+}
+header div.subtitle, h1 {
+	color: #990000;
+	text-align: center;
+}
+header div.subtitle {
+	font-size: 8pt;
+}
+form {
+	margin-bottom: 4em;
+}
+form table {
+	margin: auto;
+}
+form table input {
+	height: auto;
+}
+input[type="text"], input[type="password"], textarea {
+	border: 1px solid #000000;
+	text-indent: 0;
+	text-shadow: none;
+	text-transform: none;
+	word-spacing: normal;
+	background: #202020;
+	color: #C5C8C6;
+}
+form table tr td {
+	text-align: left;
+	margin: 0;
+	padding: 0;
+}
+form table.mod tr td {
+	padding: 2px;
+}
+form table tr th {
+	text-align: left;
+	padding: 4px;
+}
+form table tr th {
+	background: #202020;
+}
+form table tr td div.center {
+	text-align: center;
+	float: left;
+	padding-left: 3px;
+}
+form table tr td div input {
+	display: block;
+	margin: 2px auto 0 auto;
+}
+form table tr td div label {
+	font-size: 10px;
+}
+.unimportant, .unimportant * {
+	font-size: 10px;
+}
+p.fileinfo {
+	display: block;
+	margin: 0;
+	padding-right: 7em;
+}
+div.banner {
+	background-color: #000000;
+	color: #909090;
+	font-size: 12pt;
+	font-weight: bold;
+	text-align: center;
+	margin: 1em 0;
+}
+div.banner, div.banner a {
+	color: 909090;
+}
+div.banner a:hover {
+	color: #EEF2FF;
+	text-decoration: none;
+}
+img.banner, img.board_image {
+	display: block;
+	border: 1px solid #000000;
+	margin: 12px auto 0 auto;
+}
+img.post-image {
+	display: block;
+	float: left;
+	margin: 10px 20px;
+	border: none;
+}
+div.post img.post-image {
+	padding: 5px;
+	margin: 5px 20px 0 0;
+}
+div.post img.icon {
+	display: inline;
+	margin: 0 5px;
+	padding: 0;
+}
+div.post i.icon {
+	margin: 0 4px;
+	font-size: 16px;
+}
+div.post.op {
+	margin-right: 20px;
+	margin-bottom: 5px;
+}
+div.post.op hr {
+	border-color: #000000;
+}
+.intro {
+	margin: 0.5em 0;
+	padding: 0;
+	padding-bottom: 0.2em;
+}
+input.delete {
+	float: left;
+	margin: 1px 6px 0 0;
+}
+.intro span.subject {
+	color: #336699;
+	font-weight: bold;
+}
+.intro span.name {
+	color: #336600;
+	font-weight: bold;
+}
+.intro span.capcode, p.intro a.capcode, p.intro a.nametag {
+	color: #CC0000;
+	margin-left: 0;
+}
+.intro a {
+	margin-left: 8px;
+}
+div.delete {
+	float: right;
+}
+div.post.reply p {
+	margin: 0.3em 0 0 0;
+}
+div.post.reply div.body {
+	margin-left: 1.8em;
+	margin-top: 0.8em;
+	padding-right: 3em;
+	padding-bottom: 0.3em;
+}
+div.post.reply.highlighted {
+	background: #111111;
+}
+div.post.reply div.body a {
+	color: #669900;
+}
+div.post {
+	max-width: 97%;
+}
+div.post div.body {
+	word-wrap: break-word;
+	white-space: pre-wrap;
+}
+div.post.reply {
+	background: #202020;
+	margin: 0.2em 16px;
+	padding: 0.2em 0.3em 0.5em 0.6em;
+	border-width: 0px;
+	border-style: none solid solid none;
+	border-color: #202020;
+	display: inline-block;
+}
+span.trip {
+	color: #CC0000;
+}
+span.quote {
+	color: #669900;
+}
+span.omitted {
+	display: block;
+	margin-top: 1em;
+}
+br.clear {
+	clear: left;
+	display: block;
+}
+span.controls {
+	float: right;
+	margin: 0;
+	padding: 0;
+	font-size: 80%;
+}
+span.controls.op {
+	float: none;
+	margin-left: 10px;
+}
+span.controls a {
+	margin: 0;
+}
+div#wrap {
+	width: 900px;
+	margin:0 auto;
+}
+div.ban {
+	background: #202020;
+	border: 1px solid #111111;
+	max-width: 700px;
+	margin: 30px auto;
+}
+div.ban p, div.ban h2 {
+	padding: 3px 7px;
+}
+div.ban h2 {
+	background: #111111;
+	color: #C5C8C6;
+	font-size: 12pt;
+}
+div.ban p {
+	font-size: 12px;
+	margin-bottom: 12px;
+}
+div.ban p.reason {
+	font-weight: bold;
+}
+span.heading {
+	color: #CC0000;
+	font-size: 11pt;
+	font-weight: bold;
+}
+div.post.op span.spoiler,div.post.op div.body span.spoiler a {
+    color: #6B86B2;
+}
+
+div.post.op span.spoiler {
+    background: #6B86B2;
+}
+
+div.post.reply span.spoiler,div.post.reply div.body span.spoiler a {
+    color: gray;
+}
+
+div.post.reply span.spoiler {
+    background: gray;
+}
+
+div.post.op span.spoiler:hover,div.post.op div.body span.spoiler:hover a,div.post.reply span.spoiler:hover,div.post.reply div.body span.spoiler:hover a {
+    color: #000;
+}
+
+div.styles {
+	float: right;
+	padding-bottom: 20px;
+
+}
+div.styles a {
+	margin: 0 10px;
+}
+div.styles a.selected {
+	text-decoration: none;
+}
+table.test {
+	width: 100%;
+}
+table.test td, table.test th {
+	text-align: left;
+	padding: 5px;
+}
+table.test tr.h th {
+	background: #669900;
+}
+table.test td img {
+	margin: 0;
+}
+fieldset label {
+	display: block;
+}
+div.pages {
+	color: #C5C8C6;
+	background: #030303;
+	display: inline;
+	padding: 8px;
+	border-right: 0px;
+	border-bottom: 0px;
+}
+div.pages a.selected {
+	color: #A0A0A0;
+	font-weight: bolder;
+}
+div.pages a {
+	text-decoration: none;
+}
+div.pages form {
+	margin: 0;
+	padding: 0;
+	display: inline;
+}
+div.pages form input {
+	margin: 0 5px;
+	display: inline;
+}
+.topleft {
+  display: block;
+  padding: 5px 8px;
+  margin-bottom: 5px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0.9;
+}
+.topright {
+  display: block;
+  padding: 5px 8px;
+  margin-bottom: 5px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  opacity: 0.9;
+}
+hr {
+	border: none;
+	border-top: 1px solid #202020;
+	height: 0;
+	clear: left;
+}
+div.boardlist {
+	color: #C5C8C6;
+	font-size: 9pt;
+	margin-top: 3px;
+}
+div.boardlist.bottom {
+	margin-top: 20px;
+}
+div.boardlist a {
+	text-decoration: none;
+}
+
+/* Thread Footer */
+
+#thread-interactions {
+	margin: 8px 0;
+	clear: both;
+}
+#thread-links {
+	float: left;
+}
+#thread-links>a {
+	padding-left: none;
+	padding-right: 10px;
+}
+#thread-quick-reply {
+	display: none;
+	position: absolute;
+	left: 50%;
+	right: 50%;
+	text-align: center;
+	width: 100px;
+	margin-left: -50px;
+}
+#thread_stats {
+	float: right;
+}
+#post-moderation-fields {
+	float: right;
+	text-align: right;
+}
+#delete-fields {}
+#report-fields {}
+
+
+div.report {
+	color: #C5C8C6;
+}
+table.modlog {
+	margin: auto;
+	width: 100%;
+}
+table.modlog tr td {
+	text-align: left;
+	margin: 0;
+	padding: 4px 15px 0 0;
+}
+table.modlog tr th {
+	text-align: left;
+	padding: 4px 15px 5px 5px;
+	white-space: nowrap;
+}
+table.modlog tr th {
+	background: #202020;
+}
+td.minimal, th.minimal {
+	width: 1%;
+	white-space: nowrap;
+}
+div.top_notice {
+	text-align: center;
+	margin: 5px auto;
+}
+span.public_ban {
+	display: block;
+	color: #FF0000;
+	font-weight: bold;
+	margin-top: 15px;
+}
+span.toolong {
+	display: block;
+	margin-top: 15px;
+}
+div.blotter {
+	color: #FF0000;
+	font-weight: bold;
+	text-align: center;
+}
+table.mod.config-editor {
+	font-size: 9pt;
+	width: 100%;
+}
+
+
+table.mod.config-editor td {
+	text-align: left;
+	padding: 5px;
+	border-bottom: 1px solid #202020;
+}
+table.mod.config-editor input[type="text"] {
+	width: 98%;
+}
+.desktop-style div.boardlist:nth-child(1) {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  /*text-shadow: white 1px 0px 6px, white 1px 0px 6px, black 1px 0px 3px;*/
+  margin-top: 0px;
+  z-index: 30;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.desktop-style div.boardlist:nth-child(1):hover, .desktop-style div.boardlist:nth-child(1).cb-menu {
+  background-color: rgba(0, 0, 0, 1);
+}
+
+.desktop-style body {
+  padding-top: 20px;
+}
+
+.desktop-style .sub {
+  background: inherit;
+}
+
+#attention_bar {
+  height: 1.5em;
+  width: 100%;
+  text-align: center;
+}
+#attention_bar_form {
+  display: none;
+  padding: 0;
+  margin: 0;
+}
+#attention_bar_input {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  text-align: center;
+}
+#attention_bar:hover {
+  background-color: #202020;
+  opacity: 0.8;
+}
+.intro.thread-hidden {
+	margin: 0px;
+	padding: 0px;
+}
+input[type="submit"], select {
+background: #202020;
+border: 1px solid #666666;
+color: #C5C8C6;
+}
+input[type="submit"]:hover 
+{
+	color: #FFFFFF;
+}
+
+/* options.js */
+#options_div, #alert_div {
+        background: #202020;
+}
+.options_tab_icon {
+        color: #AAAAAA;
+}
+.options_tab_icon.active {
+        color: #FFFFFF;
+}
+
+
+
+
+
+.greetings h1 {
+  letter-spacing: 1px;
+  font-size: 20pt;
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+}
+.box-wrap {
+        max-width: 80%;
+        min-width: 40%;
+        margin: 30px auto;
+        overflow: auto;
+        padding: 0;
+}
+.box {
+        background: white;
+        border: 1px solid #98E;
+        margin: auto;
+        padding: 0;
+}
+.boxstats {
+        background: white;
+        border: 1px solid #98E;
+        width: 668px;
+        margin: 8px 0;
+        padding: 0;
+        text-align: center;
+}
+.box ul {
+        padding: 2px 15px;
+}
+.box ul li {
+        list-style: none;
+        margin: 0;
+}
+.box.left {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        width:50%;
+        float: none;
+}
+.box.images {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        text-align: center;
+        vertical-align:middle;
+        min-height:140px;
+        width:50%;
+}
+.boxstats.center {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        float: right;
+}
+ 
+.box h2 {
+        padding: 3px 7px;
+        font-size: 12pt;
+        border: #555555 1px solid;
+}
+.box.left h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.box.images h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.box.right h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.boxstats.center h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.box img {
+        float: none;
+        margin: 10px auto;
+}
+.mobileShow { display: none;}
+.mobileHide { display: inline;}
+
+@media only screen and (max-width: 480px) {
+.box-wrap {
+        max-width: 90%;
+        min-width: 90%;
+        margin: 30px auto;
+        overflow: auto;
+        padding: 0;
+}
+.box.images {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        text-align: center;
+        vertical-align:middle;
+        min-height:140px;
+        width: 90%;
+}
+.box.left {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        width: 90%;
+        float: none;
+}
+.file:not(.multifile) .post-image {
+  float: none;
+}
+.mobileShow { display: inline;}
+.mobileHide { display: none;}
+}
+
+.dropzone .remove-btn {
+  cursor: pointer;
+  color: #000;
+  display: inline-block;
+  vertical-align: bottom;
+  bottom: 10px;
+  position: relative;
+  margin-right: 5px;
+  font-size: 20px
+}
+.createbutton a {
+  font-size: 22px;
+  color: #C5C8C6;
+  text-decoration: none;
+}
+.createbutton a:hover {
+  font-size: 22px;
+  color: #A5A8A6;
+  text-decoration: none;
+}
+
+#notice {
+    background-color: #202020;
+    text-decoration: none;
+    padding: 15px;
+    z-index: 1000;
+    max-width: 400px;
+    margin: auto;
+    border-radius: 5px;
+    border-style: none;
+	border: 1px solid #d9bfb7;
+}

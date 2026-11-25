@@ -1,0 +1,43 @@
+<main class="nichan-gallery">
+	<nav class="nichan-gallery-nav" aria-label="{{ labels.title|e }}">
+		[ <a href="{{ config.root }}{{ board.dir }}">{{ labels.back|e }}{{ board.uri|e }}</a> /
+		<a href="{{ thread_url }}">{{ labels.thread|e }}</a> ]
+		<span class="unimportant">{{ labels.files|e }}: {{ files|length }}</span>
+	</nav>
+	{% if files|length %}
+	<div class="nichan-gallery-layout">
+		<div class="nichan-gallery-grid" aria-label="{{ labels.title|e }}">
+			{% for file in files %}
+			<a class="nichan-gallery-item" href="{{ file.url|e }}" target="_blank" rel="noopener" data-index="{{ loop.index0 }}" title="{{ file.name|e }}">
+				<span class="nichan-gallery-thumb">
+					<i class="fa fa-{{ file.icon }}" aria-hidden="true"></i>
+					{% if file.thumb %}<img src="{{ file.thumb|e }}" alt="" loading="lazy" decoding="async">{% endif %}
+					{% if file.spoiler %}<span class="nichan-gallery-badge">{{ labels.spoiler|e }}</span>{% elseif file.kind != 'image' %}<span class="nichan-gallery-badge">{{ file.ext|e }}</span>{% endif %}
+				</span>
+				<span class="nichan-gallery-name">{{ file.name|e }}</span>
+			</a>
+			{% endfor %}
+		</div>
+		<section class="nichan-gallery-preview" aria-label="{{ labels.select|e }}">
+			<div class="nichan-gallery-controls">
+				<button type="button" class="ng-previous" aria-label="{{ labels.previous|e }}" title="{{ labels.previous|e }}">←</button>
+				<span class="ng-counter" aria-live="polite"></span>
+				<button type="button" class="ng-next" aria-label="{{ labels.next|e }}" title="{{ labels.next|e }}">→</button>
+			</div>
+			<div class="nichan-gallery-media"><p>{{ labels.select|e }}</p></div>
+			<div class="nichan-gallery-caption">
+				<strong class="ng-name"></strong>
+				<div class="ng-details unimportant"></div>
+				<p class="ng-text"></p>
+				<div class="nichan-gallery-actions">
+					<a class="ng-post" href="{{ thread_url }}">{{ labels.post|e }}</a>
+					<a class="ng-open" target="_blank" rel="noopener">{{ labels.open|e }}</a>
+					<a class="ng-download" download>{{ labels.download|e }}</a>
+				</div>
+			</div>
+		</section>
+	</div>
+	{% else %}<p class="nichan-gallery-empty">{{ labels.empty|e }}</p>{% endif %}
+</main>
+<script type="application/json" id="nichan-gallery-data">{{ gallery_json }}</script>
+<script src="{{ nichan_asset(config.root ~ 'js/nichan-gallery.js') }}" defer></script>

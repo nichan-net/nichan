@@ -1,0 +1,5 @@
+{# Shown instead of the post form when posting is closed; revealed by /posting-status.css files. #}
+{% if not mod %}
+<div class="nichan-closed nichan-closed-site" style="display:none">{{ config.locale starts with 'en' ? 'The administrator has temporarily closed posting on the whole site.' : 'Адміністратор тимчасово закрив можливість писати на сайті.' }}</div>
+<div class="nichan-closed nichan-closed-board" style="display:none">{{ config.locale starts with 'en' ? 'The administrator has closed posting on this board.' : 'Адміністратор закрив можливість писати у цій дошці.' }}</div>
+{% endif %}

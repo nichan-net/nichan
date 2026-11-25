@@ -1,0 +1,24 @@
+.classic-home #portal-main { padding-top:var(--portal-mast-height,49px) }
+.classic-home .portal-skip:not(:focus) { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%) }
+.classic-home .nichan-front-logo, .classic-stats { text-align:center }
+.classic-home .nichan-front-logo img { opacity:.65; max-width:100%; height:auto }
+.classic-home .boards-list { line-height:1.6; font-weight:bold }
+.classic-home .latest { display:flex; flex-wrap:wrap; justify-content:center; gap:10px }
+.classic-home .latest img { max-width:150px; max-height:150px }
+.classic-home .box-wrap .box { margin-bottom:14px }
+.classic-home #since[hidden] { display:none }
+.classic-home .nichan-since-close { border:0; background:none; color:inherit; cursor:pointer }
+.classic-home #front-posts .spoiler:not(:hover):not(.portal-revealed) { color:transparent !important; text-shadow:none !important }
+.classic-home #front-posts .spoiler.portal-revealed { background:transparent !important; color:inherit !important }
+.classic-stats table { width:100%; max-width:640px; margin:auto; border-collapse:collapse; font-size:99% }
+.classic-stats th, .classic-stats td { padding:2px 6px; border:1px solid; border-color:inherit }
+.classic-stats td:first-child { text-align:left }
+.classic-stats tfoot td { font-weight:bold; border-top-width:2px }
+@media (max-width:1023px) {
+	.classic-home .boards-list { text-align:center }
+}
+@media (max-width:768px) {
+	.classic-home .latest img { max-width:42vw; max-height:125px }
+	.classic-stats table { font-size:85% }
+	.classic-stats th, .classic-stats td { padding:2px 3px }
+}

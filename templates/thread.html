@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+	{# Title, description and picture for search engines and link previews (Telegram, Facebook, …).
+	   Addresses come from config.nichan_public_url: pages rebuilt from the terminal don't know the host. #}
+	{% set meta_subject = thread.subject ? thread.subject|nichan_plain(90) : thread.body_nomarkup|nichan_plain(90) %}
+	{% set meta_desc = thread.body_nomarkup|nichan_plain(200) %}
+	{% set meta_url = config.nichan_public_url ~ (thread.link|split('#')|first) %}
+	{% set meta_thumb = thread.files.0.thumb|default('') %}
+	{% set meta_image = meta_thumb and meta_thumb != 'spoiler' and meta_thumb != 'file' and thread.files.0.file != 'deleted'
+		? config.nichan_public_url ~ config.root ~ board.dir ~ config.dir.thumb ~ meta_thumb
+		: config.nichan_public_url ~ config.root ~ 'static/app/icon-512.png' %}
+	<meta name="description" content="{{ (meta_desc ?: meta_subject)|e }}" />
+	<link rel="canonical" href="{{ meta_url|e }}" />
+	<meta property="og:site_name" content="{{ (config.locale starts with 'en' ? config.nichan_site.name_en : config.nichan_site.name)|e }}" />
+	<meta property="og:type" content="article" />
+	<meta property="og:locale" content="{{ config.locale starts with 'en' ? 'en_US' : 'uk_UA' }}" />
+	<meta property="og:url" content="{{ meta_url|e }}" />
+	<meta property="og:title" content="{{ meta_subject|e }} — {{ board.url }}" />
+	<meta property="og:description" content="{{ (meta_desc ?: board.title)|e }}" />
+	<meta property="og:image" content="{{ meta_image|e }}" />
+	<meta name="twitter:card" content="summary" />
+	{% if config.nichan_site.twitter %}<meta name="twitter:site" content="{{ config.nichan_site.twitter|e }}" />{% endif %}
+	<meta name="twitter:title" content="{{ meta_subject|e }} — {{ board.url }}" />
+	<meta name="twitter:description" content="{{ (meta_desc ?: board.title)|e }}" />
+	<meta name="twitter:image" content="{{ meta_image|e }}" />
+
+        <script type="text/javascript">
+          var active_page = "thread", board_name = "{{ board.uri }}", thread_id = "{{ thread.id }}";
+    	</script>
+
+	{% include 'header.html' %}
+
+	<title>{{ meta_subject|e }} — {{ board.url }} — {{ (config.locale starts with 'en' ? config.nichan_site.name_en : config.nichan_site.name)|e }}</title>
+        <style>
+#vhoru {
+  display: block;
+  position: fixed;
+  top: 50px;
+  right: 30px;
+  z-index: 99;
+  font-size: 18px;
+  border: none;
+  outline: none;
+  background-color: grey;
+}
+
+#vnyz {
+  display: block;
+  position: fixed;
+  bottom: 50px;
+  right: 30px;
+  z-index: 99;
+  font-size: 18px;
+  border: none;
+  outline: none;
+  background-color: grey;
+}
+        </style>
+</head>
+<body id="thread" class="8chan vichan {% if mod %}is-moderator{% else %}is-not-moderator{% endif %} active-thread" data-stylesheet="{% if config.default_stylesheet.1 != '' %}{{ config.default_stylesheet.1 }}{% else %}default{% endif %}">
+	<div class="bar top">
+		{{ boardlist.top }}
+	</div>
+	<a name="top"></a>
+	{% if pm %}<div class="top_notice">You have <a href="?/PM/{{ pm.id }}">an unread PM</a>{% if pm.waiting > 0 %}, plus {{ pm.waiting }} more waiting{% endif %}.</div><hr />{% endif %}
+	{% if config.url_banner %}<img class="board_image" src="{{ config.url_banner }}" {% if config.banner_width or config.banner_height %}style="{% if config.banner_width %}width:{{ config.banner_width }}px{% endif %};{% if config.banner_width %}height:{{ config.banner_height }}px{% endif %}" {% endif %}alt="" />{% endif %}
+	{% if not mod %}<script>window.nichanBanner && nichanBanner(document.currentScript, '{{ board.uri }}');</script>{% endif %}
+	<div id="pagewrap">
+	<header>
+		<h1 class="glitch" data-text="{{ board.url }} - {{ board.title|e }}">{{ board.url }} - {{ board.title|e }}</h1>
+		<div class="subtitle">
+			{% if board.subtitle %}
+				{% if config.allow_subtitle_html %}
+					{{ board.subtitle }}
+				{% else %}
+					{{ board.subtitle|e }}
+				{% endif %}
+			{% endif %}
+			{% if mod %}<p><a href="?/">{% trans %}Return to dashboard{% endtrans %}</a></p>{% endif %}
+		</div>
+	</header>
+
+	{% include 'attention_bar.html' %}
+
+<!--    <div class="thread-page"></div> -->
+
+	{{ config.ad.top }}
+
+	{% set nichan_en = config.locale starts with 'en' %}
+	{% set reply_count = thread.postCount() %}
+	{% set nichan_back = (nichan_en ? 'Back to /' : 'Назад до /') ~ board.uri ~ '/' %}
+	{% set nichan_arch = nichan_archived(board.uri, thread.id) %}
+	{% set nichan_next = nichan_continuation(board.uri, thread.id) %}
+	{% set nichan_prev = nichan_continuation_of(board.uri, thread.id) %}
+	{% if nichan_prev %}
+		<div class="nichan-thread-note">{{ nichan_en ? 'A continuation of' : 'Продовження нитки' }} <a href="{{ config.root }}{{ board.dir }}{{ config.dir.res }}{{ nichan_prev }}.html">&gt;&gt;&gt;/{{ board.uri }}/{{ nichan_prev }}</a></div>
+	{% endif %}
+	{% if nichan_next %}
+		<div class="nichan-thread-note">{{ nichan_en ? 'This thread continues in' : 'Нитка має продовження:' }} <a href="{{ config.root }}{{ board.dir }}{{ config.dir.res }}{{ nichan_next }}.html">&gt;&gt;&gt;/{{ board.uri }}/{{ nichan_next }}</a></div>
+	{% elseif not nichan_arch and config.reply_limit > 0 and reply_count >= config.reply_limit %}
+		{# (the reply limit is the bump limit: replies can still be posted, the thread just stops rising) #}
+		<div class="nichan-thread-note">{{ nichan_en ? 'The thread has reached its bump limit: it no longer rises.' : 'Нитка досягла бампліміту: вона більше не піднімається.' }}
+			<a href="{{ config.root }}{{ board.dir }}?continue={{ thread.id }}#top">[{{ nichan_en ? 'Start a continuation' : 'Створити продовження' }}]</a></div>
+	{% endif %}
+	{% if nichan_arch %}
+		<div class="nichan-thread-note">{{ nichan_en ? 'This thread is in the archive: it is closed for replies.' : 'Нитку перенесено в архів: відповідати в ній не можна.' }}
+			<a href="{% if mod %}?/{{ board.uri }}/archive{% else %}{{ config.root }}{{ board.dir }}archive.html{% endif %}">[{{ nichan_en ? 'Archive' : 'Архів' }}]</a></div>
+		<style>form[name="post"] { display: none; }</style>
+	{% else %}
+	{% include 'posting_closed.html' %}
+	<div id="thread-compose" class="createbutton nichan-replybtn"><center><a href="javascript:void(0)">[{{ nichan_en ? 'Reply' : 'Відповісти' }}]</a></center></div>
+	<div class="nichan-replywrap">{% include 'post_form.html' %}</div>
+	{% endif %}
+
+	{% if config.global_message %}<hr /><div class="blotter">{{ config.global_message }}</div>{% endif %}
+	<hr />
+	<div class="threadlinks-noup">
+		<span class="threadlink"><a href="{{ return }}"><span aria-hidden="true">←</span> {{ nichan_back|e }}</a></span>
+		<span class="threadlink"><a class="nichan-gallery-link" href="{{ config.root }}gallery.php?board={{ board.uri|url_encode }}&amp;thread={{ thread.id }}">[{{ nichan_en ? 'Gallery' : 'Галерея' }}]</a></span>
+		{% if config.catalog_link %}<span class="threadlink"><a id="thread-catalog" href="{{ config.root }}{{ board.dir }}{{ config.catalog_link }}">[{{ nichan_en ? 'Catalog' : 'Каталог' }}]</a></span>{% endif %}
+		<span class="threadlink"><a href="#page-bottom">[{% trans %}Вниз сторінки{% endtrans %}]</a></span>
+	</div>
+	<hr />
+	<form name="postcontrols" action="{{ config.post_url }}" method="post">
+		<input type="hidden" name="board" value="{{ board.uri }}" />
+		{% if mod %}<input type="hidden" name="mod" value="1" />{% endif %}
+		
+		{{ body }}
+		{# (also at the end: those reading the last posts see where the talk went on) #}
+		{% if nichan_next %}
+		<div class="nichan-thread-note">{{ nichan_en ? 'This thread continues in' : 'Нитка має продовження:' }} <a href="{{ config.root }}{{ board.dir }}{{ config.dir.res }}{{ nichan_next }}.html">&gt;&gt;&gt;/{{ board.uri }}/{{ nichan_next }}</a></div>
+		{% endif %}
+        <div id="thread-interactions" class="nichan-thread-end">
+            <div>
+                <div class="nichan-thread-actions">
+                    <a id="thread-return" href="{{ return }}"><span aria-hidden="true">←</span> {{ nichan_back|e }}</a>
+                    <span class="nichan-update-slot"></span>
+                </div>
+                <div class="nichan-online nichan-visit-stats" style="display:none">
+                    <div>{{ nichan_en ? 'In this thread now' : 'Зараз у цій нитці' }}: <strong data-online="thread"></strong></div>
+                    <div>{{ nichan_en ? 'Visitors of the thread in the last 24 hours' : 'За останні 24 години нитку відвідали' }}: <strong data-online="thread24"></strong></div>
+                </div>
+            </div>
+            <div id="thread_stats"><div class="nichan-bump-remaining" data-replies="{{ reply_count }}">{{ nichan_bump_remaining(config.reply_limit, reply_count, nichan_en) }}</div></div>
+        </div>
+        {% include 'report_delete.html' %}
+		<div class="clearfix"></div>
+	</form>
+	
+    {{ boardlist.bottom }}
+
+	{{ config.ad.bottom }}
+    </div>
+    {{ nichan_footer(config) }}
+	<script type="text/javascript">{% raw %}
+		ready();
+	{% endraw %}</script>
+	<div id="page-bottom"></div>
+<button onclick="window.scrollTo(0,0);return false;" href="#" id="vhoru"><i class="fa">&#xf106;</i></button>
+<button onclick="window.scrollTo(0,document.body.scrollHeight);return false;" href="#" id="vnyz"><i class="fa">&#xf107;</i></button>
+</body>
+</html>

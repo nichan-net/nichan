@@ -1,0 +1,80 @@
+<form action="?/nichan-flags/{{ board }}" method="post" enctype="multipart/form-data" style="max-width:860px;margin:0 auto" id="nichan-flags-form">
+	<input type="hidden" name="token" value="{{ token }}">
+	<input type="hidden" name="save" value="1">
+	<p class="unimportant">Позначки, які дописувачі можуть обрати у формі на /{{ board }}/. Картинки — PNG, GIF, JPEG або WEBP до 200 КБ
+		(звичайний розмір прапорця — 16×11 пікселів, більші картинки зменшуються). Нові позначки з'являться у формі одразу після збереження.
+		Порядок у формі — перетягніть рядок за ⠿ (або стрілки ▲▼).</p>
+	<table class="modlog nichan-flag-table" style="width:100%">
+		<tr><th title="Перетягніть рядок, щоб змінити порядок"></th><th>Картинка</th><th>Код</th><th>Назва</th><th>Замінити картинку</th><th>Видалити</th></tr>
+		{% for f in flags %}
+		<tr data-flag="{{ loop.index0 }}" draggable="true">
+			<td class="drag" style="white-space:nowrap"><input type="hidden" name="pos[{{ loop.index0 }}]" value="{{ loop.index }}">
+				<span class="handle" title="Перетягніть">⠿</span><button type="button" class="up" title="Вище">▲</button><button type="button" class="down" title="Нижче">▼</button></td>
+			<td style="text-align:center">{% if f.file %}<img src="/static/flags/{{ f.file }}" alt="" style="max-width:32px;max-height:22px">{% endif %}</td>
+			<td><code>{{ f.key }}</code></td>
+			<td><input type="text" name="label[{{ loop.index0 }}]" value="{{ f.label|e }}" size="28"></td>
+			<td><input type="file" name="image_{{ loop.index0 }}" accept="image/png,image/gif,image/jpeg,image/webp"></td>
+			<td style="text-align:center"><input type="checkbox" name="delete[{{ loop.index0 }}]"></td>
+		</tr>
+		{% endfor %}
+		<tr>
+			<td></td>
+			<td><b>Нова:</b></td>
+			<td><input type="text" name="new_key" size="10" placeholder="код, напр. ukrnat"></td>
+			<td><input type="text" name="new_label" size="28" placeholder="назва для людей"></td>
+			<td><input type="file" name="new_image" accept="image/png,image/gif,image/jpeg,image/webp"></td>
+			<td></td>
+		</tr>
+	</table>
+	<p style="text-align:center"><input type="submit" value="Зберегти"></p>
+</form>
+<style>
+	.nichan-flag-table .drag { cursor: move; user-select: none; }
+	.nichan-flag-table .handle { font-size: 1.2em; padding: 0 4px; opacity: .7; }
+	.nichan-flag-table .drag button { padding: 0 4px; font-size: 10px; line-height: 1.4; }
+	.nichan-flag-table tr.dragging { opacity: .4; }
+	.nichan-flag-table tr.drop-before td { box-shadow: inset 0 2px 0 0 currentColor; }
+	.nichan-flag-table tr.drop-after td { box-shadow: inset 0 -2px 0 0 currentColor; }
+</style>
+<script>
+(function () {
+	var body = document.querySelector('.nichan-flag-table').tBodies[0], dragged = null;
+	function rows() { return Array.prototype.slice.call(body.querySelectorAll('tr[data-flag]')); }
+	function clearMarks() { rows().forEach(function (r) { r.classList.remove('drop-before', 'drop-after'); }); }
+	body.addEventListener('dragstart', function (e) {
+		dragged = e.target.closest && e.target.closest('tr[data-flag]');
+		if (!dragged) return;
+		dragged.classList.add('dragging');
+		e.dataTransfer.effectAllowed = 'move';
+		try { e.dataTransfer.setData('text/plain', dragged.getAttribute('data-flag')); } catch (x) {}
+	});
+	body.addEventListener('dragover', function (e) {
+		var tr = e.target.closest && e.target.closest('tr[data-flag]');
+		if (!dragged || !tr || tr === dragged) return;
+		e.preventDefault();
+		clearMarks();
+		var r = tr.getBoundingClientRect();
+		tr.classList.add(e.clientY < r.top + r.height / 2 ? 'drop-before' : 'drop-after');
+	});
+	body.addEventListener('drop', function (e) {
+		var tr = e.target.closest && e.target.closest('tr[data-flag]');
+		if (!dragged || !tr || tr === dragged) return;
+		e.preventDefault();
+		body.insertBefore(dragged, tr.classList.contains('drop-before') ? tr : tr.nextSibling);
+		clearMarks();
+	});
+	body.addEventListener('dragend', function () { if (dragged) dragged.classList.remove('dragging'); dragged = null; clearMarks(); });
+	/* the arrows: for phones, where dragging table rows does not work */
+	body.addEventListener('click', function (e) {
+		var b = e.target.closest && e.target.closest('button.up, button.down');
+		if (!b) return;
+		var tr = b.closest('tr'), list = rows(), i = list.indexOf(tr);
+		if (b.classList.contains('up') && i > 0) body.insertBefore(tr, list[i - 1]);
+		if (b.classList.contains('down') && i < list.length - 1) body.insertBefore(tr, list[i + 1].nextSibling);
+	});
+	/* the order of the rows becomes the flags' order */
+	document.getElementById('nichan-flags-form').addEventListener('submit', function () {
+		rows().forEach(function (r, i) { r.querySelector('input[name^="pos["]').value = i + 1; });
+	});
+})();
+</script>

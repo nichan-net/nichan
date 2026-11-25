@@ -1,0 +1,26 @@
+{% set nichan_en = portal_section ? portal_en : config.locale starts with 'en' %}
+{% set nichan_boards = nichan_nav_boards(mod) %}
+{% set nichan_hidden = mod ? nichan_nav_boards(mod, true) : [] %}
+{% set nichan_all_title = nichan_en ? 'All boards' : 'Усі дошки' %}
+{% set search_scope = not portal_section and not no_post_form ? search_board|default(board.uri) : '' %}
+{# [ home ] [ boards ] [ hidden boards, staff only ] [ dm / FAQ ]; board links open the mod view when logged in #}
+<b>
+<div class="pages topleft">
+	<span class="nichan-nav-group">[&nbsp;<a href="{{ config.root }}" title="{{ config.nichan_site.name|e }}"><i class="fa">&#xf015;</i></a>&nbsp;]</span>
+	<span class="mobileHide">
+	[&nbsp;<span class="nichan-nav-boards">{% for b in nichan_boards %}{% if not loop.first %}<span class="nichan-nav-sep"> / </span>{% endif %}<a href="{% if mod %}?/{{ b.uri }}/{{ config.file_index }}{% else %}{{ config.root }}{{ b.uri }}/{% endif %}" title="{{ b.title|e }}" data-board="{{ b.uri }}">{{ b.uri }}</a>{% endfor %}<span class="nichan-nav-sep"> / </span><a href="{{ config.root }}all/" title="{{ nichan_all_title }}" data-board="all">all</a></span>&nbsp;]
+	{% if nichan_hidden|length %}[&nbsp;{% for b in nichan_hidden %}{% if not loop.first %} / {% endif %}<a href="?/{{ b.uri }}/{{ config.file_index }}" title="{{ b.title|e }} ({% if b.visibility == 3 %}прихована{% elseif b.visibility == 2 %}лише адміни{% else %}модератори і адміни{% endif %})">{{ b.uri }}</a>{% endfor %}&nbsp;]{% endif %}
+	</span>
+	<select class="mobileShow" onChange="if (this.value) window.location.href=this.value">
+		<option value="">{{ nichan_en ? 'boards' : 'дошки' }}</option>
+		{% for b in nichan_boards %}<option value="{% if mod %}?/{{ b.uri }}/{{ config.file_index }}{% else %}{{ config.root }}{{ b.uri }}/{% endif %}" data-board="{{ b.uri }}">/{{ b.uri }}/ – {{ b.title|e }}</option>{% endfor %}
+		{% for b in nichan_hidden %}<option value="?/{{ b.uri }}/{{ config.file_index }}">/{{ b.uri }}/ – {{ b.title|e }} *</option>{% endfor %}
+		<option value="{{ config.root }}all/" data-board="all">/all/ – {{ nichan_all_title }}</option>
+	</select>
+	<span class="nichan-nav-group">[&nbsp;<a href="{{ config.root }}demotivator/" title="{{ nichan_en ? 'Make a demotivator or a meme' : 'Створити демотиватор або мем' }}">dm</a> / <a href="{{ config.root }}{{ nichan_en ? 'intrules.php' : 'rules.php' }}" title="{{ nichan_en ? 'FAQ and rules' : 'Питання й відповіді' }}">FAQ</a> / <a href="{{ config.root }}search.php{% if search_scope is not empty %}?board={{ search_scope|url_encode }}{% elseif nichan_en %}?lang=en{% endif %}" title="{{ nichan_en ? 'Search the posts' : 'Пошук по дописах' }}" aria-label="{{ nichan_en ? 'Search' : 'Пошук' }}"><i class="fa fa-search"></i></a>&nbsp;]</span>
+</div>
+<div class="pages topright">
+	[&nbsp;{% for l in config.nichan_site.menu_links %}<a href="{{ l.url|e }}"{% if l.external %} target="_blank" rel="noopener"{% endif %}{% if l.title %} title="{{ l.title|e }}"{% endif %}>{% if l.icon %}<i class="fa {{ l.icon }}"></i>{% else %}{{ l.label|e }}{% endif %}</a> / {% endfor %}<a href="{{ config.root }}settings.php{{ nichan_en ? '?lang=en' : '' }}" class="nichan-settings-open" title="{{ nichan_en ? 'Settings' : 'Налаштування' }}" aria-label="{{ nichan_en ? 'Settings' : 'Налаштування' }}"><i class="fa fa-cog"></i></a>&nbsp;] <a href="javascript:void(0)" class="nichan-pin" title="{{ nichan_en ? 'Pin the menu to the top of the page / let it follow the page' : 'Закріпити меню вгорі сторінки / відкріпити, щоб рухалося разом зі сторінкою' }}"><i class="fa fa-thumb-tack"></i></a>
+</div>
+</b>
+{% if not portal_section %}<br />{% endif %}

@@ -1,0 +1,163 @@
+{% macro chips(prefix, row, names) %}
+	<div class="nc-chips">
+		<input type="hidden" name="{{ prefix }}_countries" value="{{ row.countries|join(',') }}">
+		<span class="nc-list">{% for c in row.countries %}<span class="nc-chip" data-code="{{ c }}">{{ names[c] is defined ? names[c]|e : c|upper }} <a href="javascript:void(0)" class="nc-x" title="Прибрати">×</a></span>{% endfor %}</span>
+		<select class="nc-add"><option value="">+ додати країну</option></select>
+	</div>
+{% endmacro %}
+{% macro mode(prefix, row) %}
+	<select name="{{ prefix }}_mode">
+		<option value="only"{% if row.mode == 'only' %} selected{% endif %}>лише для</option>
+		<option value="except"{% if row.mode == 'except' %} selected{% endif %}>для всіх, крім</option>
+	</select>
+{% endmacro %}
+{% macro cells(prefix, row, label, names) %}
+	<td>{{ label }}</td><td>{{ _self.mode(prefix, row) }}</td><td>{{ _self.chips(prefix, row, names) }}</td>
+{% endmacro %}
+{% import _self as nc %}
+
+<p class="unimportant">Для кожного правила виберіть країни. «Лише для» з порожнім списком вимикає рядок. «Для всіх, крім» з порожнім списком охоплює всіх, зокрема відвідувачів із невідомою країною.
+	Країна визначається за IP. Команда сайту може дописувати з панелі без цих обмежень.</p>
+<p class="unimportant">Блок має перевагу над капчею. Серед капч спочатку діють рядки «лише для», потім «для всіх, крім». При збігу в одному режимі порядок такий: reCAPTCHA, українська, англійська.
+	Для решти країн діє звичайна капча дошки, якщо вона ввімкнена.</p>
+{% if not recaptcha_ready %}<p>Для reCAPTCHA додайте обидва ключі в налаштуваннях інтеграції. Без них застосовується доступна капча дошки або картинка мовою дошки.</p>{% endif %}
+{% if not picture_ready %}<p>Капча з картинкою недоступна. Перевірте GD із FreeType і файл шрифту. Для допису, який вимагає капчі, потрібен хоча б один доступний тип.</p>{% endif %}
+
+<fieldset>
+	<legend>Глобально</legend>
+	<form method="post" action="?/nichan-countries">
+		<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="save_global" value="1">
+		<table class="modlog nc-table">
+			<tr><th>Що</th><th>Для кого</th><th>Країни</th></tr>
+			{% for type, label in rules %}<tr>{{ nc.cells('g_' ~ type, global[type], label, names) }}</tr>{% endfor %}
+		</table>
+		{% if global.board_captcha_first|default(false) %}<p class="unimportant">До наступного збереження цих правил капча дошки має перевагу, як у попередній версії.</p>{% endif %}
+		<p class="nc-switch">
+			<label><input type="radio" name="g_enabled" value=""{% if not global.enabled %} checked{% endif %}> Вимк</label>
+			<label><input type="radio" name="g_enabled" value="1"{% if global.enabled %} checked{% endif %}> Увімк</label>
+			<input type="submit" value="Застосувати">
+			<span class="unimportant">{{ global.enabled ? 'Зараз діють глобальні правила; правила дошок не використовуються.' : 'Глобальні правила вимкнено; діють правила дошок.' }}</span>
+		</p>
+	</form>
+</fieldset>
+
+<fieldset{% if global.enabled %} class="nc-off"{% endif %}>
+	<legend>По дошці</legend>
+	{% if global.enabled %}<p class="unimportant">Неактивно, поки ввімкнено глобальні правила.</p>{% endif %}
+	<form method="post" action="?/nichan-countries">
+		<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="save_boards" value="1">
+		<fieldset class="nc-inner"{% if global.enabled %} disabled{% endif %}>
+		<table class="modlog nc-table">
+			<tr><th>Дошка</th><th>Що</th><th>Для кого</th><th>Країни</th></tr>
+			{% for uri, title in boards %}
+			{% set s = scopes[uri] %}
+			{% for type, label in rules %}
+			<tr{% if loop.first %} class="nc-board-first"{% endif %}>
+				{% if loop.first %}<td rowspan="{{ rules|length }}" class="nc-board"><strong>/{{ uri }}/</strong> <span class="unimportant">{{ title|e }}</span><br>
+					<label><input type="checkbox" name="b_{{ uri }}_enabled" value="1"{% if s.enabled %} checked{% endif %}> активувати</label>
+					{% if s.board_captcha_first|default(false) %}<br><span class="unimportant">До збереження капча дошки має перевагу.</span>{% endif %}</td>{% endif %}
+				{{ nc.cells('b_' ~ uri ~ '_' ~ type, s[type], label, names) }}
+			</tr>
+			{% endfor %}
+			{% endfor %}
+		</table>
+		<p><input type="submit" value="Застосувати"></p>
+		</fieldset>
+	</form>
+</fieldset>
+
+<fieldset>
+	<legend>Текст помилки</legend>
+	<form method="post" action="?/nichan-countries" class="na-form">
+		<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="save_default" value="1">
+		<label>Стандартна <span class="unimportant">(для країн без власного тексту)</span>
+			<input type="text" name="default_message" value="{{ default_message|e }}" maxlength="500"></label>
+		<p><input type="submit" value="Зберегти"></p>
+	</form>
+
+	<p><button type="button" onclick="var f=document.getElementById('nc-add-message');f.style.display=f.style.display==='none'?'':'none'">Додати користувацьку помилку для країни</button></p>
+	<form method="post" action="?/nichan-countries" id="nc-add-message" class="na-form" style="display:none">
+		<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="add_message" value="1">
+		<label>Країна <select name="code" class="nc-country-select" required style="display:block;margin-top:3px;font-weight:normal"><option value="">— вибрати —</option></select></label>
+		<label>Текст <input type="text" name="message" maxlength="500" required></label>
+		<p><input type="submit" value="Додати"></p>
+	</form>
+
+	{% if messages|length %}
+	<table class="modlog">
+		<tr><th>Країна</th><th>Текст</th><th></th></tr>
+		{% for m in messages %}
+		<tr>
+			<td style="white-space:nowrap"><strong>{{ m.code|upper }}</strong> {{ m.name|e }}</td>
+			<td>{{ m.text|e }}</td>
+			<td><form method="post" action="?/nichan-countries" onsubmit="return confirm('Видалити цей текст?')">
+				<input type="hidden" name="token" value="{{ token }}"><button type="submit" name="remove_message" value="{{ m.code }}">видалити</button></form></td>
+		</tr>
+		{% endfor %}
+	</table>
+	{% endif %}
+</fieldset>
+
+<fieldset>
+	<legend>Перевірити IP</legend>
+	<form method="post" action="?/nichan-countries" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+		<input type="hidden" name="token" value="{{ token }}">
+		<input type="text" name="check_ip" placeholder="IP-адреса" value="{{ lookup ? lookup.ip|e : '' }}">
+		<input type="submit" value="Перевірити">
+	</form>
+	{% if lookup %}
+	<p>{{ lookup.ip|e }} — {% if lookup.code %}<strong>{{ lookup.name|e }}</strong> ({{ lookup.code|upper }}){% else %}країну не визначено{% endif %}:</p>
+	<ul>{% for b in lookup.boards %}<li>/{{ b.uri }}/ — {{ b.what ? b.what : 'дописує як усі' }}</li>{% endfor %}</ul>
+	{% endif %}
+</fieldset>
+
+<select id="nc-countries" style="display:none">{% for code, name in names %}<option value="{{ code }}">{{ name|e }} ({{ code|upper }})</option>{% endfor %}</select>
+<script>
+(function () {
+	var all = document.getElementById('nc-countries');
+	var names = {};
+	Array.prototype.forEach.call(all.options, function (o) { names[o.value] = o.text.replace(/ \([A-Z]{2}\)$/, ''); });
+	function fill(select) {
+		Array.prototype.forEach.call(all.options, function (o) { select.appendChild(o.cloneNode(true)); });
+	}
+	Array.prototype.forEach.call(document.querySelectorAll('.nc-country-select'), fill);
+	Array.prototype.forEach.call(document.querySelectorAll('.nc-chips'), function (box) {
+		var input = box.querySelector('input[type=hidden]'), list = box.querySelector('.nc-list'), add = box.querySelector('.nc-add');
+		function openPicker() {
+			if (add.options.length === 1) fill(add);
+		}
+		add.addEventListener('focus', openPicker);
+		add.addEventListener('pointerdown', openPicker);
+		add.addEventListener('keydown', openPicker);
+		function codes() { return input.value ? input.value.split(',') : []; }
+		function chip(code) {
+			var s = document.createElement('span');
+			s.className = 'nc-chip';
+			s.setAttribute('data-code', code);
+			s.appendChild(document.createTextNode((names[code] || code.toUpperCase()) + ' '));
+			var x = document.createElement('a');
+			x.href = 'javascript:void(0)';
+			x.className = 'nc-x';
+			x.title = 'Прибрати';
+			x.textContent = '×';
+			s.appendChild(x);
+			return s;
+		}
+		add.addEventListener('change', function () {
+			var code = add.value, list0 = codes();
+			add.value = '';
+			if (!code || list0.indexOf(code) >= 0) return;
+			list0.push(code);
+			input.value = list0.join(',');
+			list.appendChild(chip(code));
+		});
+		list.addEventListener('click', function (e) {
+			var x = e.target.closest('.nc-x');
+			if (!x) return;
+			var s = x.parentNode, code = s.getAttribute('data-code');
+			input.value = codes().filter(function (c) { return c !== code; }).join(',');
+			s.parentNode.removeChild(s);
+		});
+	});
+})();
+</script>

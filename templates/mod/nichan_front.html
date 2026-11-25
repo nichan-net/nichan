@@ -1,0 +1,29 @@
+<div style="max-width:800px;margin:0 auto;padding:0 8px">
+	<form method="post" action="?/nichan-front">
+		<input type="hidden" name="token" value="{{ token }}">
+		<fieldset style="margin-bottom:14px">
+			<legend>Дописи й нитки</legend>
+			<p><label>Кількість записів у кожній стрічці <input type="number" name="posts" value="{{ s.posts }}" min="0" max="200" style="width:5em"></label></p>
+			<p><label><input type="checkbox" name="images_spoilers" value="1"{% if s.images_spoilers %} checked{% endif %}> показувати вкладення під спойлером як картинку спойлера</label></p>
+		</fieldset>
+		<fieldset style="margin-bottom:14px">
+			<legend>Популярні нитки</legend>
+			<p>Нитки, де за останні <input type="number" name="popular_hours" value="{{ s.popular_hours }}" min="1" max="168" style="width:4em"> год
+				з'явилося щонайменше <input type="number" name="popular_min" value="{{ s.popular_min }}" min="1" style="width:4em"> відповідей;
+				показувати до <input type="number" name="popular_count" value="{{ s.popular_count }}" min="0" max="50" style="width:4em"> ниток (0 — не показувати блок).</p>
+			<p>Не показувати:<br>
+				<label><input type="checkbox" name="popular_skip_bumplimit" value="1"{% if s.popular_skip_bumplimit %} checked{% endif %}> нитки на бамп-ліміті</label><br>
+				<label><input type="checkbox" name="popular_skip_locked" value="1"{% if s.popular_skip_locked %} checked{% endif %}> закриті нитки (і ті, що в архіві)</label><br>
+				<label><input type="checkbox" name="popular_skip_sticky" value="1"{% if s.popular_skip_sticky %} checked{% endif %}> закріплені нитки</label></p>
+		</fieldset>
+		<fieldset style="margin-bottom:14px">
+			<legend>Фільтри</legend>
+			<p>Не показувати на головній дошки:
+				{% for b in boards %}<label style="margin-right:10px"><input type="checkbox" name="exclude_{{ b.uri }}" value="1"{% if b.uri in s.exclude %} checked{% endif %}> /{{ b.uri }}/</label>{% endfor %}
+				<br><span class="unimportant">Приховані дошки на головній не з'являються ніколи.</span></p>
+			<p>Не показувати дописи й нитки, де є ці слова (по одному в рядку, регістр не важливий):<br>
+				<textarea name="words" rows="4" style="width:100%">{{ words|e }}</textarea></p>
+		</fieldset>
+		<p><input type="submit" value="Зберегти"> <span class="unimportant">Головна перебудовується одразу після збереження.</span></p>
+	</form>
+</div>

@@ -1,0 +1,36 @@
+{% set base = all ? '?/nichan-visits/all' : '?/nichan-visits' %}
+{% set sortq = sort == 'now' ? '&sort=now' : '' %}
+<div style="max-width:980px;margin:0 auto;padding:0 8px">
+	<p class="unimportant">Скільки браузерів відкривали сторінку за останні 24 години («за добу») і за останні 3 хвилини («зараз»). Рахуються браузери з увімкненими скриптами:
+		одна людина з двох пристроїв — двоє, боти не рахуються. IP не зберігаються. «Дописів» — скільки дописів з'явилося в нитці за добу.</p>
+	<p style="margin:4px 0"><strong>Доба:</strong> всього {{ site.day }}.{% for b in boards %} <a href="?/{{ b.board }}/{{ config.file_index }}">/{{ b.board }}/</a> {{ b.day }}{% if not loop.last %} ·{% endif %}{% endfor %}</p>
+	<p style="margin:4px 0 12px"><strong>Зараз:</strong> всього {{ site.now }}.{% for b in boards_now %} <a href="?/{{ b.board }}/{{ config.file_index }}">/{{ b.board }}/</a> {{ b.now }}{% if not loop.last %} ·{% endif %}{% endfor %}</p>
+
+	{% if rows|length %}
+	<div style="overflow-x:auto">
+	<table class="modlog" style="width:100%">
+		<tr><th>#</th><th>Нитка</th>
+			<th title="Відвідувачів за останні 24 години">{% if sort == 'day' %}За добу ▼{% else %}<a href="{{ base }}" title="Сортувати за відвідувачами за добу">За добу</a>{% endif %}</th>
+			<th title="Відвідувачів за останні 3 хвилини">{% if sort == 'now' %}Зараз ▼{% else %}<a href="{{ base }}&amp;sort=now" title="Сортувати за відвідувачами зараз">Зараз</a>{% endif %}</th>
+			<th title="Дописів у нитці за останні 24 години">Дописів</th></tr>
+		{% for r in rows %}
+		<tr>
+			<td style="text-align:right">{{ loop.index }}</td>
+			<td>{% if r.exists %}<a href="?/{{ r.board }}/{{ config.dir.res }}{{ r.thread }}.html">/{{ r.board }}/{{ r.thread }}</a> — {% if r.title %}{{ r.title|e }}{% else %}<em class="unimportant">(без тексту)</em>{% endif %}{% if r.sticky %} <i class="fa fa-thumb-tack" title="Закріплена"></i>{% endif %}{% if r.locked %} <i class="fa fa-lock" title="Закрита"></i>{% endif %}
+				{% else %}/{{ r.board }}/{{ r.thread }} <em class="unimportant">(видалена)</em>{% endif %}</td>
+			<td style="text-align:center">{% if sort == 'day' %}<strong>{{ r.day }}</strong>{% else %}{{ r.day }}{% endif %}</td>
+			<td style="text-align:center">{% if sort == 'now' %}<strong>{{ r.now ?: '' }}</strong>{% else %}{{ r.now ?: '' }}{% endif %}</td>
+			<td style="text-align:center">{{ r.posts ?: '' }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+	</div>
+	{% if not all and total > rows|length %}
+	<p style="text-align:center"><a href="?/nichan-visits/all{{ sortq }}">Показати всі нитки ({{ total }})</a></p>
+	{% elseif all and total > 50 %}
+	<p style="text-align:center"><a href="?/nichan-visits{{ sortq }}">Лише перші 50</a></p>
+	{% endif %}
+	{% else %}
+	<p><em>За останні 24 години ниток ніхто не відкривав.</em></p>
+	{% endif %}
+</div>

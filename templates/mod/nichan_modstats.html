@@ -1,0 +1,33 @@
+<div style="max-width:980px;margin:0 auto;padding:0 8px">
+	<p style="text-align:center">За останні: {% for d in [7, 30, 90] %}{% if d == days %}<strong>{{ d }} днів</strong>{% else %}<a href="?/nichan-modstats/{{ d }}">{{ d }} днів</a>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+	<h3>Хто що зробив</h3>
+	{% if stats.totals|length %}
+	<div style="overflow-x:auto">
+	<table class="modlog" style="width:100%">
+		<tr><th>Хто</th>{% for k in stats.kinds %}<th>{{ labels[k] }}</th>{% endfor %}<th>Разом</th></tr>
+		{% for who, t in stats.totals %}
+		<tr>
+			<td>{{ who|e }}</td>
+			{% for k in stats.kinds %}<td style="text-align:center">{{ t[k] ?: '' }}</td>{% endfor %}
+			<td style="text-align:center"><strong>{{ t._sum }}</strong></td>
+		</tr>
+		{% endfor %}
+	</table>
+	</div>
+	{% else %}
+	<p><em>За цей час дій не було.</em></p>
+	{% endif %}
+	<h3>По днях</h3>
+	<div style="overflow-x:auto">
+	<table class="modlog" style="width:100%">
+		<tr><th>День</th>{% for k in stats.kinds %}<th>{{ labels[k] }}</th>{% endfor %}</tr>
+		{% for day, d in stats.daily %}
+		<tr>
+			<td style="white-space:nowrap">{{ day }}</td>
+			{% for k in stats.kinds %}<td style="text-align:center">{{ d[k]|default('') }}</td>{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
+	</div>
+	<p class="unimportant">Рахується з журналу модерації; дії кнопками в Telegram записані на ім'я того, хто натиснув.</p>
+</div>

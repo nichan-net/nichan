@@ -1,0 +1,59 @@
+{% extends 'themes/recent/recent.html' %}
+{% block metadata %}
+	{{ parent() }}
+	<link rel="canonical" href="{{ (config.nichan_public_url ~ modern_url)|e }}">
+{% endblock %}
+{% block main %}
+<div class="nichan-front">
+	<aside class="nichan-front-side">
+		<div class="nichan-front-logo">
+			{% if classic_logo %}<img src="{{ classic_logo|e }}" alt="{{ config.nichan_site.name|e }}">{% else %}<h1>{{ config.nichan_site.name|e }}</h1>{% endif %}
+			{% if config.nichan_site.home_subtitle %}<p class="nichan-front-motto">{{ config.nichan_site.home_subtitle|e }}</p>{% endif %}
+		</div>
+		<nav class="boards-list" aria-label="Дошки">
+			{% for b in boards %}<div><a href="{{ config.root }}{{ b.uri|e }}/">/{{ b.uri|e }}/ – {{ b.title|e }}</a><span class="nichan-board-online unimportant" data-board="{{ b.uri|e }}"></span></div>{% endfor %}
+			<a href="{{ config.root }}all/">/all/ – Усі дошки</a>
+		</nav>
+	</aside>
+	<div class="box-wrap">
+		<section class="box left nichan-since" id="since" aria-labelledby="since-title" hidden></section>
+		<div id="front-news">{% if news %}
+			<section class="box left nichan-front-news"><h2>Останні новини</h2>
+				<ul class="nichan-news-list">{% for n in news %}<li data-until="{{ n.until }}">
+					<a href="{{ config.root }}news.php?id={{ n.id }}">{{ n.subject|e }}</a>
+					<time class="nichan-news-date" datetime="{{ n.time|ldate('c') }}">{{ n.time|ldate('d.m.Y') }}</time>
+					{% if n.summary %}<div class="nichan-news-summary">{{ n.summary|e }}</div>{% endif %}
+				</li>{% endfor %}</ul>
+			</section>
+		{% endif %}</div>
+		<div id="front-images">{% if recent_images %}
+			<section class="box images"><h2>Найновіші зображення</h2>
+				<div class="latest">{% for post in recent_images %}
+					<a href="{{ post.link|e }}"><img src="{{ post.src|e }}" alt="Допис №{{ post.id }} на /{{ post.board|e }}/" loading="lazy" decoding="async"></a>
+				{% endfor %}</div>
+			</section>
+		{% endif %}</div>
+		<div id="front-popular">{% if popular.threads %}
+			<section class="box left" data-expires="{{ popular.expires }}"><h2>Популярні нитки</h2>
+				<ul>{% for t in popular.threads %}<li><strong>/{{ t.board|e }}/</strong>:
+					<a href="{{ t.link|e }}">{{ (t.subject ?: t.snippet ?: 'Нитка №' ~ t.id)|e }}</a> (+{{ t.recent }})
+				</li>{% endfor %}</ul>
+			</section>
+		{% endif %}</div>
+		<section class="box left" id="front-posts"><h2>Останні повідомлення</h2>
+			<ul>{% for post in recent_posts %}<li><strong>{{ post.board_name|e }}</strong>:
+				<a href="{{ post.link|e }}">{% if post.classic_snippet|length %}{{ post.classic_snippet|raw }}{% else %}<em>{{ post.snippet|e }}</em>{% endif %}</a>
+			</li>{% else %}<li>Дописи ще не з’явилися.</li>{% endfor %}</ul>
+		</section>
+		<section class="box left classic-stats"><h2><a href="{{ config.root }}statistics.php">Статистика</a></h2>
+			<div id="front-post-count">Усього повідомлень: {{ totals.total_posts|number_format }}</div>
+			<div class="nichan-speed-box">{{ speed_table }}</div>
+			<div class="nichan-online" style="display:none">Зараз на сайті: <strong data-online="site"></strong></div>
+			<div class="nichan-online" style="display:none">За останні 24 години сайт відвідали: <strong data-online="site24"></strong></div>
+			<div id="front-totals">Унікальних дописувачів існуючих повідомлень: {{ totals.unique_posters|number_format }}<br>
+				Активного контенту: {{ totals.active_content|filesize }}
+			</div>
+		</section>
+	</div>
+</div>
+{% endblock %}

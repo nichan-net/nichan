@@ -1,0 +1,56 @@
+<div style="max-width:1200px;margin:0 auto;padding:0 6px">
+	<form style="text-align:center;margin:8px 0" onsubmit="location.href = '?/bans' + (this.all.checked ? '&all=1' : '') + (this.q.value.trim() ? '&q=' + encodeURIComponent(this.q.value.trim()) : ''); return false;">
+		<input type="text" name="q" value="{{ q|e }}" size="30" placeholder="IP, причина, дошка або модератор">
+		<label><input type="checkbox" name="all" {% if not active %}checked{% endif %}> разом із тими, чий строк минув</label>
+		<input type="submit" value="Шукати">
+		{% if q or not active %}<a href="?/bans">скинути</a>{% endif %}
+	</form>
+
+	<form action="?/bans" method="post">
+		<input type="hidden" name="token" value="{{ token }}">
+		<input type="hidden" name="return_query" value="{{ return_query|e }}">
+		{% if bans|length %}
+		<div style="overflow-x:auto">
+		<table class="modlog nichan-bans" style="width:100%">
+			<tr>
+				{% if can_unban %}<th><input type="checkbox" title="вибрати всі" onclick="var c=this.checked;Array.prototype.forEach.call(document.querySelectorAll('.nichan-bans input.unban'),function(i){i.checked=c})"></th>{% endif %}
+				<th>IP</th>
+				<th>Причина</th>
+				<th>Дошка</th>
+				<th>Видано</th>
+				<th>Закінчується</th>
+				<th>Хто</th>
+				{% if config.ban_appeals %}<th title="Оскарження бану: «тут» — на розгляді, ✓ — відхилене">Апеляція</th>{% endif %}
+			</tr>
+			{% for ban in bans %}
+			<tr{% if ban.expired %} style="text-decoration:line-through;opacity:.6"{% endif %}>
+				{% if can_unban %}<td>{% if ban.can_unban %}<input type="checkbox" class="unban" name="ban_{{ ban.id }}">{% endif %}</td>{% endif %}
+				<td style="white-space:nowrap">{% if ban.single %}<a href="?/IP/{{ ban.mask }}">{{ ban.mask }}</a>{% else %}{{ ban.mask }}{% endif %}</td>
+				<td>
+					{% if ban.seen %}<span title="бачив повідомлення про бан">✓</span> {% endif %}
+					{{ ban.reason ? ban.reason : '-' }}
+					{% if ban.message %}<details><summary class="unimportant">повідомлення</summary><div style="max-width:520px;overflow-wrap:anywhere">{{ ban.message }}</div></details>{% endif %}
+				</td>
+				<td>{{ ban.board ? '/' ~ ban.board ~ '/' : 'усі' }}</td>
+				<td style="white-space:nowrap" title="{{ ban.created|ldate('d.m.Y H:i') }}">{{ ban.created|ago }} тому</td>
+				<td style="white-space:nowrap">{% if not ban.expires %}<em>ніколи</em>{% else %}{{ ban.expires|ldate('d.m.Y H:i') }}{% if not ban.expired %} <small>(через {{ ban.expires|until }})</small>{% endif %}{% endif %}</td>
+				<td>{{ ban.staff|e }}</td>
+				{% if config.ban_appeals %}<td style="text-align:center">{% if ban.appeal %}{% if ban.appeal.denied %}<span title="Оскарження відхилено">✓</span>{% else %}<a href="?/ban-appeals#appeal-{{ ban.appeal.id }}" title="Оскарження на розгляді">тут</a>{% endif %}{% endif %}</td>{% endif %}
+			</tr>
+			{% endfor %}
+		</table>
+		</div>
+		{% if can_unban %}<p style="text-align:center"><input type="submit" name="unban" value="Зняти вибрані бани" onclick="return confirm('Зняти вибрані бани?')"></p>{% endif %}
+		{% else %}
+		<p style="text-align:center"><em>Банів не знайдено.</em></p>
+		{% endif %}
+	</form>
+
+	{% if pages > 1 %}
+	<p style="text-align:center">
+		{% for p in 1..pages %}
+			{% if p == page %}<strong>[{{ p }}]</strong>{% else %}<a href="?/bans{{ base }}&amp;page={{ p }}">[{{ p }}]</a>{% endif %}
+		{% endfor %}
+	</p>
+	{% endif %}
+</div>

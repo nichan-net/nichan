@@ -1,0 +1,127 @@
+Options -Indexes
+DirectoryIndex recent.html index.php index.html
+AddDefaultCharset UTF-8
+
+RewriteEngine on
+
+# Keep the actual proxy peer even when Apache has already restored the visitor's IP.
+RewriteRule ^(?:post\.php|api\.php|api/) - [E=NICHAN_PEER_ADDR:%{CONN_REMOTE_ADDR}]
+
+# Protect Git metadata and dotfiles. Allow HTTP certificate challenges.
+RewriteRule "(^|/)\.(?!well-known(?:/|$))" - [F,L]
+
+<IfModule mod_headers.c>
+
+	# no MIME guessing (an uploaded .txt shown as HTML), no framing of the site by others (clickjacking the panel)
+	Header always set X-Content-Type-Options "nosniff"
+	Header always set X-Frame-Options "SAMEORIGIN"
+	Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Engine internals are never served directly (the old captcha endpoint too: no board uses it any more)
+RewriteRule ^templates/themes/[a-z0-9_]+/thumb\.png$ - [L]
+RewriteRule ^(inc|templates|tools|tmp)(/|$) - [F,L]
+RewriteRule (^|/)(error_log|\.installed|[^/]+\.(sql|sh|md|log))$ - [F,L]
+# Archives, dumps and backups left in the site's own folders are never served (install / update
+# leftovers may contain inc/instance-config.php). Public downloads in /app/ are allowed.
+# Files posted to the boards live in <board>/src/ and stay reachable.
+RewriteCond %{REQUEST_URI} !^/app/
+RewriteRule ^([^/]+/)?[^/]+\.(zip|gz|tgz|tar|7z|rar|bak|old|orig|swp)$ - [F,L]
+RewriteRule ^[a-z]+/config\.php$ - [F,L]
+
+# Before setup finishes, route public requests to the installer.
+RewriteCond %{DOCUMENT_ROOT}/.installed !-f
+RewriteRule ^(?!install\.php$|\.well-known/).* /install.php [R=302,L]
+
+# Only a home page with a time-limited ranking needs a deadline check.
+RewriteCond %{DOCUMENT_ROOT}/tmp/front-popular-until -f
+RewriteRule ^(?:recent(?:-classic)?\.html)?$ front.php [L]
+RewriteRule ^dm/?$ demotivator/index.php [L]
+# A fresh installation can offer the default manifest before its first rebuild.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^manifest\.webmanifest$ static/app/manifest.webmanifest [L]
+
+# The mobile app's API (api.php, API.md)
+RewriteRule ^api/v1/([a-z]+(/[a-z]+)?)/?$ api.php?route=$1 [QSA,L]
+
+# The app's update manifest (/app/latest.json) is never kept by Cloudflare or anyone else: a new version is seen at once
+# (Cache-Control below)
+RewriteRule ^app/latest\.json$ - [E=NICHAN_NO_STORE:1]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ 404.php [L]
+
+# Browser caching. Generated HTML/JSON must always be revalidated; uploaded files never change.
+<IfModule mod_expires.c>
+	ExpiresActive On
+	ExpiresDefault "access plus 1 hour"
+	ExpiresByType text/html "access plus 0 seconds"
+	ExpiresByType application/json "access plus 0 seconds"
+	ExpiresByType application/rss+xml "access plus 10 minutes"
+	ExpiresByType application/xml "access plus 1 hour"
+	ExpiresByType text/css "access plus 1 hour"
+	ExpiresByType application/javascript "access plus 1 hour"
+	ExpiresByType text/javascript "access plus 1 hour"
+	ExpiresByType image/jpeg "access plus 1 month"
+	ExpiresByType image/png "access plus 1 month"
+	ExpiresByType image/gif "access plus 1 month"
+	ExpiresByType image/webp "access plus 1 month"
+	ExpiresByType image/svg+xml "access plus 1 month"
+	ExpiresByType image/x-icon "access plus 1 month"
+	ExpiresByType video/webm "access plus 1 month"
+	ExpiresByType video/mp4 "access plus 1 month"
+	ExpiresByType font/woff2 "access plus 1 year"
+	ExpiresByType application/font-woff2 "access plus 1 year"
+	ExpiresByType application/font-woff "access plus 1 year"
+	ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
+	ExpiresByType font/ttf "access plus 1 year"
+	# These endpoints set their own cache lifetime to match the underlying snapshot.
+	<FilesMatch "^(statistics|front)\.php$">
+		ExpiresActive Off
+	</FilesMatch>
+</IfModule>
+
+# The pages the site writes (board pages, threads, catalog, their JSON, RSS): browsers always recheck them, Cloudflare
+# may keep them for a day (s-maxage). The site purges each one from Cloudflare as soon as it changes, so the Cloudflare
+# cache rule can "use the cache-control header" instead of caching everything: then a page the hosting puts in front
+# of the site (its bot check, sent with "no-store") is never kept and shown to everybody.
+<FilesMatch "\.(html|json|xml|rss)$">
+	<IfModule mod_headers.c>
+		Header set Cache-Control "public, max-age=0, s-maxage=86400"
+		Header set Cache-Control "no-store" env=NICHAN_NO_STORE
+		Header unset Expires env=NICHAN_NO_STORE
+	</IfModule>
+</FilesMatch>
+# Validators of the static files, so the app (and browsers) ask "changed?" and get 304: ETag besides Last-Modified
+# (the hosting's server sends none by itself). The site rewrites a page on every change, so its time and size change.
+FileETag MTime Size
+# Compressing a file, the server sends its ETag as "…-gzip" but doesn't know it when it comes back (If-None-Match)
+<IfModule mod_headers.c>
+	RequestHeader edit* If-None-Match "-(gzip|br|deflate)\"" "\""
+</IfModule>
+
+# Web app manifest (install to the home screen)
+AddType application/manifest+json .webmanifest
+
+# Closing/opening posting only rewrites these files, so browsers must always recheck them;
+# the same for the site's own scripts and styles, which change with every update of the site,
+# for the flag pictures of the boards (custom.css, geo.css: rewritten from mod.php), and for the web app's worker
+# and manifest.
+<FilesMatch "^(posting-status\.css|site-status\.js|custom\.css|geo\.css|nichan\.js|nichan-dm\.js|nichan\.css|main\.js|sw\.js|manifest\.webmanifest)$">
+	<IfModule mod_expires.c>
+		ExpiresActive Off
+	</IfModule>
+	<IfModule mod_headers.c>
+		Header set Cache-Control "no-cache"
+	</IfModule>
+</FilesMatch>
+
+<IfModule mod_deflate.c>
+	AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml application/xml application/rss+xml application/javascript text/javascript application/json image/svg+xml
+</IfModule>
+
+AddType font/woff2 .woff2
+AddType video/webm .webm
+# Android apps posted to the boards: phones offer to install them instead of showing a zip
+AddType application/vnd.android.package-archive .apk

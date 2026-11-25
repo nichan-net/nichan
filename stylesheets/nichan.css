@@ -1,0 +1,527 @@
+/*
+ * Nichan: small-screen fixes that apply on top of every selectable style
+ * (dark_nich, ukrchan, futaba, ...). Loaded after the theme stylesheet.
+ */
+
+/* Board menu: full links on wide screens, a <select> on phones - in every style, not only dark_nich. */
+.mobileShow { display: none; }
+.mobileHide { display: inline; }
+
+.nichan-sage { color: #bb2030; font-weight: bold; }
+html:has(#stylesheet:is([href*="/dark_nich"], [href*="/neon.css"], [href*="/fellowkids.css"])) .nichan-sage { color: #ff6969; }
+
+/* Long words / URLs never widen the page. */
+div.post, div.post div.body, .subject, .name, .omitted, blockquote {
+	overflow-wrap: break-word;
+	word-wrap: break-word;
+}
+div.post div.body pre, div.post div.body code { white-space: pre-wrap; }
+div.post video, div.post img.post-image, div.post iframe, .youtube-player img { max-width: 100%; }
+
+@media only screen and (max-width: 768px) {
+	html, body { overflow-x: hidden; }
+	body { margin: 0; padding: 0 6px; }
+	.mobileShow { display: inline; }
+	.mobileHide { display: none; }
+
+	/* Post form: one column, full-width fields. 16px text stops iOS from zooming into inputs. */
+	form[name="post"] table, form[name="post"] table tbody, form[name="post"] table tr { display: block; width: 100%; }
+	form[name="post"] table th, form[name="post"] table td { display: block; width: auto; text-align: left; padding: 2px 0; }
+	form[name="post"] table th { padding-top: 6px; }
+	form[name="post"] input[type="text"], form[name="post"] input[type="password"], form[name="post"] input[type="email"],
+	form[name="post"] textarea, form[name="post"] select {
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
+		font-size: 16px;
+	}
+	form[name="post"] textarea { min-height: 8em; }
+	form[name="post"] input[type="submit"] { font-size: 16px; padding: 6px 14px; }
+	.dropzone { box-sizing: border-box; max-width: 100%; }
+
+	/* Posts use the full width; replies keep only a small indent. */
+	div.post.reply { display: block; max-width: 100%; box-sizing: border-box; margin-left: 0; margin-right: 0; }
+	div.post.reply.post-hover { max-width: 94vw; }
+	div.thread > .post.reply { margin-left: 4px; }
+	div.post div.body { margin-left: 0.4em; margin-right: 0.2em; }
+	div.post div.file, div.files { max-width: 100%; }
+	div.post img.post-image { height: auto; }
+	div.post .fileinfo { word-break: break-all; }
+	div.post iframe { width: 100% !important; height: auto; aspect-ratio: 16 / 9; }
+
+	/* Easier tapping on post checkboxes, controls and pagination. */
+	div.post input.delete[type="checkbox"] { width: 20px; height: 20px; vertical-align: middle; }
+	div.post .controls a, div.post .intro a.post_no { padding: 2px 1px; }
+	div.pages { line-height: 2.2; }
+	div.pages a { padding: 2px 5px; }
+
+	/* Delete / report / moderation bar below the posts. */
+	#post-moderation-fields { float: none; text-align: left; margin: 8px 0; }
+	#post-moderation-fields input[type="text"], #post-moderation-fields input[type="password"] { max-width: 45vw; font-size: 16px; }
+	#mod-mass-fields { margin-top: 6px; line-height: 2; }
+
+	table.modlog, table.mod, .ban-list table { display: block; overflow-x: auto; }
+	.box-wrap .box { width: auto !important; float: none !important; margin: 8px 0 !important; }
+}
+
+@media only screen and (max-width: 420px) {
+	header h1 { font-size: 1.6em; }
+	div.post div.body { font-size: 15px; }
+}
+
+/* Moderation bar (desktop). */
+#mod-mass-fields { margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(128, 128, 128, .5); }
+#mod-mass-fields button, #mod-mass-fields select, #mod-mass-fields input { margin: 1px 2px; }
+
+/* ---------- Post form editor (js/nichan.js) ---------- */
+.nichan-ed-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; margin: 0 0 3px; }
+.nichan-ed-modes, .nichan-ed-tools { display: inline-flex; flex-wrap: wrap; gap: 3px; }
+.nichan-ed-bar button { font: inherit; font-size: 12px; line-height: 1.4; padding: 2px 7px; min-width: 26px; cursor: pointer; }
+.nichan-ed-modes button[aria-pressed="true"] { font-weight: bold; text-decoration: underline; }
+.nichan-ed-modes { padding-right: 6px; border-right: 1px solid rgba(128, 128, 128, .5); }
+.nichan-ed-visual { box-sizing: border-box; min-width: 300px; width: 100%; contain: inline-size; height: 9em; min-height: 4em; max-width: 100%; overflow: auto; white-space: pre-wrap;
+	word-wrap: break-word; overflow-wrap: anywhere; resize: both; text-align: left; outline: none; background: #fff; color: #000; border: 1px solid #aaa; }
+.nichan-ed-visual:focus { box-shadow: 0 0 0 1px rgba(90, 157, 240, .7); }
+.nichan-ed-visual .quote { color: #789922; }
+.nichan-ed-visual .spoiler { background: rgba(128, 128, 128, .45); }
+.nichan-ed-visual .heading { font-weight: bold; font-size: 1.15em; color: #af0a0f; }
+.nichan-ed-visual code { font-family: monospace; background: rgba(128, 128, 128, .2); padding: 0 2px; }
+#quick-reply .nichan-ed-visual { min-width: 0; width: 100% !important; }
+
+/* ---------- Post previews ---------- */
+.nichan-preview { position: absolute; z-index: 1000; display: block !important; margin: 0 !important; max-height: 70vh; overflow: auto;
+	border-style: solid; box-shadow: 1px 2px 6px rgba(0, 0, 0, .5); }
+.nichan-preview img.post-image { max-width: 200px; max-height: 200px; height: auto; }
+
+/* ---------- Word filter ---------- */
+.nichan-filter-panel { display: block; position: fixed; right: 10px; bottom: 10px; z-index: 1000; text-align: left; margin: 0; padding: 8px 12px; border: 1px solid rgba(128, 128, 128, .6); border-radius: 4px; box-shadow: 0 2px 12px rgba(0, 0, 0, .35); width: 460px; max-width: calc(100vw - 20px); max-height: 70vh; overflow: auto; box-sizing: border-box; }
+.nichan-filter-title { font-weight: bold; margin-bottom: 4px; }
+.nichan-filter-list { margin: 6px 0 0; padding-left: 18px; }
+.nichan-filter-list li { margin: 2px 0; }
+.nichan-filtered { margin: 4px 0 4px 1em; font-size: 90%; opacity: .75; font-style: italic; }
+.nichan-post-tool { margin-left: 3px; cursor: pointer; }
+
+@media only screen and (max-width: 768px) {
+	.nichan-ed-visual { width: 100% !important; min-width: 0; font-size: 16px; }
+	.nichan-ed-bar button { font-size: 14px; padding: 4px 9px; }
+	.nichan-preview { max-width: calc(100vw - 16px) !important; }
+}
+
+/* Standalone pages (FAQ, statistics, /dm/): keep the title clear of the fixed top bar. */
+body.active-page > header h1 { margin-top: 1.6em; }
+@media only screen and (max-width: 768px) {
+	body.active-page > header h1 { margin-top: 2.2em; font-size: 1.5em; }
+}
+
+/* Custom tripcodes (mod.php -> Tripcodes) */
+.nichan-trip { font-weight: normal; }
+.nichan-blink { animation: nichan-blink 1.1s steps(2, start) infinite; }
+@keyframes nichan-blink { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .nichan-blink { animation: none; } }
+
+/* ---------- Inline reply (js/nichan.js) ---------- */
+.nichan-inline-reply { margin: 6px 0 10px 2em; padding: 4px 6px; border: 1px dashed rgba(128, 128, 128, .6); display: table; max-width: calc(100% - 2em); box-sizing: border-box; }
+.nichan-inline-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; font-size: 90%; }
+.nichan-inline-title { flex: 1; font-weight: bold; }
+.nichan-inline-reply.detached { position: fixed; right: 12px; bottom: 12px; margin: 0; z-index: 900; max-height: 90vh; overflow: auto;
+	background: inherit; box-shadow: 0 4px 18px rgba(0, 0, 0, .5); border-style: solid; }
+.nichan-inline-reply.detached .nichan-inline-bar { cursor: move; user-select: none; }
+.nichan-inline-reply form[name="post"] { margin: 0; }
+
+/* ---------- Replies, hidden posts, thread updates, embeds ---------- */
+.nichan-replies { clear: both; font-size: 85%; margin: 4px 0 2px 0.4em; opacity: .9; }
+.nichan-replies em { margin-right: 4px; }
+.nichan-filter-panel { padding-right: 28px; }
+.nichan-filter-close { position: absolute; top: 2px; right: 4px; font-size: 16px; line-height: 1; padding: 0 5px; cursor: pointer; background: transparent; color: inherit; border: 0; }
+.nichan-thread-updates { margin: 8px 0; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.nichan-embed { margin: 6px 0; }
+.nichan-embed-open { cursor: pointer; font: inherit; padding: 6px 12px; position: relative; }
+.nichan-embed-open.has-thumb { padding: 0; border: 0; background: #000; display: inline-block; }
+.nichan-embed-open.has-thumb img { display: block; width: 320px; max-width: 100%; height: auto; opacity: .85; }
+.nichan-embed-open.has-thumb span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #fff;
+	background: rgba(0, 0, 0, .65); padding: 6px 14px; border-radius: 6px; white-space: nowrap; }
+.nichan-embed iframe { display: block; background: #000; }
+@media only screen and (max-width: 768px) {
+	.nichan-inline-reply { margin-left: 0; max-width: 100%; display: block; }
+	.nichan-inline-reply.detached { left: 4px !important; right: 4px; top: auto !important; bottom: 4px; }
+}
+
+/* "Post too long. Click here" - the link must look like a link in every style */
+span.toolong a { text-decoration: underline; font-weight: bold; }
+
+/* picture captcha (two words) in the post form */
+.nichan-tcaptcha .tc-pic { display: block; min-height: 20px; margin-bottom: 3px; text-decoration: none; }
+.nichan-tcaptcha .tc-pic img { display: block; width: 300px; max-width: 100%; height: auto; border-radius: 3px; cursor: pointer; }
+.nichan-tcaptcha input[type=text] { width: 300px; max-width: 100%; box-sizing: border-box; }
+
+/* post menu (icon next to the post number) */
+/* no taller than the digits of the post number, so the line keeps its height
+   (style.css gives every icon in a post 16px, hence the specific selector) */
+.nichan-menu-btn { display: inline-block; text-decoration: none; margin-left: 3px; padding: 0 2px; font-size: 10px; line-height: 10px; height: 10px; opacity: .75; }
+div.post .nichan-menu-btn i.fa { font-size: 10px; line-height: 10px; margin: 0; vertical-align: top; }
+.nichan-menu-btn:hover { opacity: 1; }
+/* the bookmark before the triangle (first posts): a saved thread shows it filled and bright */
+.nichan-save-btn { margin-left: 4px; }
+.nichan-save-btn + .nichan-menu-btn { margin-left: 2px; }
+.nichan-save-btn.saved { opacity: 1; }
+.thread-hidden .nichan-menu-btn { display: none; }
+.nichan-menu { position: absolute; z-index: 1001; min-width: 170px; padding: 4px 0; border: 1px solid rgba(128, 128, 128, .6); border-radius: 4px; box-shadow: 0 2px 12px rgba(0, 0, 0, .35); }
+.nichan-menu a { display: block; padding: 6px 14px; text-decoration: none; white-space: nowrap; }
+.nichan-menu a:hover { background: rgba(128, 128, 128, .2); }
+
+/* report / delete dialogs */
+.nichan-dialog-back { position: fixed; inset: 0; z-index: 1002; background: rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
+.nichan-dialog { position: relative; width: 380px; max-width: 100%; padding: 12px 16px; border: 1px solid rgba(128, 128, 128, .6); border-radius: 6px; box-shadow: 0 4px 24px rgba(0, 0, 0, .5); box-sizing: border-box; }
+.nichan-dialog-title { font-weight: bold; margin: 0 24px 8px 0; }
+.nichan-dialog textarea { width: 100%; box-sizing: border-box; }
+.nichan-dialog-msg { min-height: 1em; margin-top: 6px; font-weight: bold; }
+.nichan-dialog-buttons { margin: 8px 0 0; text-align: right; }
+.nichan-dialog-close { position: absolute; top: 4px; right: 6px; font-size: 18px; line-height: 1; padding: 0 5px; cursor: pointer; background: transparent; color: inherit; border: 0; }
+.nichan-thread-updates .u-now { text-decoration: none; }
+
+/* replies to your posts: a mark on the post and a counter that jumps from one to the next */
+div.post.nichan-to-you { border-left: 3px solid #e0a000 !important; }
+.nichan-you-box { position: fixed; left: 10px; bottom: 10px; z-index: 999; padding: 4px 10px; border-radius: 4px; font-size: 13px; text-decoration: none;
+	background: #e0a000; color: #1a1a1a !important; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+.nichan-saved-toggle.to-you, .nichan-saved-new.to-you { font-weight: bold; }
+.nichan-saved-new { opacity: .85; }
+
+/* report reasons */
+.nichan-reasons { display: flex; flex-direction: column; gap: 4px; margin: 0 0 8px; }
+.nichan-reason { cursor: pointer; }
+
+/* highlighted [code] */
+div.body pre.prettyprint.hljs { padding: 6px 8px; border-radius: 4px; max-width: 100%; overflow-x: auto; white-space: pre; }
+
+/* a moderator's note under a post; notices at the top of a thread (archive, continuation) */
+.nichan-modnote { color: #d33 !important; font-style: italic; margin-top: 6px; }
+.nichan-thread-note { text-align: center; margin: 8px auto; padding: 6px 10px; max-width: 700px; border: 1px solid rgba(128, 128, 128, .5); border-radius: 4px; }
+
+/* filter: pictures hidden; "OP posts only" */
+.nichan-hide-img .files, .nichan-hide-img div.file, .nichan-hide-img .post-image { display: none !important; }
+.nichan-img-show { font-size: 12px; margin: 2px 0; }
+.nichan-op-only div.post.reply:not(.nichan-op-post), .nichan-op-only div.post.reply:not(.nichan-op-post) + br { display: none; }
+
+/* the author's own thread waiting for a moderator (only in their browser) */
+.nichan-pending { display: block; margin: 8px 0; padding: 6px 10px; border: 1px dashed rgba(128, 128, 128, .7); border-radius: 4px; overflow: hidden; opacity: .9; }
+.nichan-pending img { float: left; max-width: 120px; max-height: 120px; margin: 0 10px 4px 0; }
+.nichan-pending-mark { display: inline-block; padding: 1px 7px; border-radius: 3px; font-weight: bold; font-size: 12px; color: #fff; background: #d08a00; }
+.nichan-pending.status-approved .nichan-pending-mark { background: #2e9e5b; }
+.nichan-pending.status-rejected .nichan-pending-mark { background: #c33; }
+.nichan-pending .body { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* the top menu: over everything; follows the page (default) or pinned to the top of the page */
+.pages.topleft, .pages.topright, .topleft, .topright { z-index: 3000 !important; }
+html.nichan-header-pinned .pages.topleft, html.nichan-header-pinned .pages.topright,
+html.nichan-header-pinned .topleft, html.nichan-header-pinned .topright { position: absolute !important; }
+.nichan-pin { text-decoration: none; opacity: .6; margin-left: 2px; }
+html.nichan-header-pinned .nichan-pin { opacity: 1; }
+html.nichan-header-pinned .nichan-pin i { transform: rotate(45deg); }
+
+/* the reply form of a thread opens with "Відповісти" (without scripts it is simply shown) */
+.nichan-replybtn { display: none; }
+html.nichan-js .nichan-replybtn { display: block; }
+html.nichan-js .nichan-replywrap:not(.open) { display: none; }
+
+/* "Цитувати" over selected text */
+.nichan-quote-btn { position: absolute; z-index: 2500; padding: 3px 9px; font-size: 13px; border-radius: 4px; cursor: pointer;
+	background: #2f6fd6; color: #fff; font-weight: bold; border: 1px solid #1d4f9e; box-shadow: 0 2px 8px rgba(0, 0, 0, .45); }
+.nichan-quote-btn:hover { background: #3f82ee; color: #fff; }
+
+/* a picture opened in a post preview */
+.nichan-preview img.nichan-full { max-width: 90vw; max-height: 80vh; width: auto !important; height: auto !important; }
+
+/* my posts, settings */
+.nichan-myposts li { margin-bottom: 4px; }
+#nichan-settings fieldset { margin-bottom: 14px; }
+#nichan-settings label { cursor: pointer; }
+#nichan-settings textarea { width: 100%; box-sizing: border-box; }
+
+/* the row of icons under the post form (hide pictures, tree view, filter, saved, my posts, settings) */
+.nichan-tools { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin: 2px 0; }
+.nichan-tools a, .nichan-tools button { display: inline-block; padding: 5px 7px; text-decoration: none; font-size: 16px; line-height: 1; border-radius: 4px; }
+.nichan-tools button { margin: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.nichan-tools a:hover, .nichan-tools button:hover { background: rgba(128, 128, 128, .2); }
+.nichan-tools .nichan-tree-toggle[aria-pressed="true"] { color: var(--nichan-tree-active, #669900) !important; }
+.nichan-saved-count { font-size: 12px; margin-left: 2px; }
+.nichan-saved-toggle.to-you .nichan-saved-count { font-weight: bold; }
+
+/* A thread's gallery: every attachment, with an in-page preview and a link back to its post. */
+.nichan-gallery { max-width: 1600px; margin: 12px auto 24px; padding: 0 8px; }
+.nichan-gallery-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; margin-bottom: 12px; border-bottom: 1px solid rgba(128, 128, 128, .4); }
+.nichan-gallery-nav > .unimportant { margin-left: auto; }
+.nichan-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; min-width: 0; }
+.nichan-gallery-item { display: block; min-width: 0; padding: 5px; border: 1px solid var(--nichan-gallery-border, rgba(128, 128, 128, .35)); border-radius: 3px; background: var(--nichan-gallery-tile, rgba(128, 128, 128, .08)); text-decoration: none; }
+.nichan-gallery-item:hover { background: var(--nichan-gallery-hover, rgba(128, 128, 128, .16)); }
+.nichan-gallery-item[aria-current="true"] { outline: 2px solid var(--nichan-gallery-selected, #5a9df0); outline-offset: -2px; }
+.nichan-gallery-thumb { position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; overflow: hidden; background: rgba(128, 128, 128, .08); }
+.nichan-gallery-thumb > i { font-size: 40px; opacity: .65; }
+.nichan-gallery-thumb > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: inherit; }
+.nichan-gallery-badge { position: absolute; bottom: 4px; right: 4px; padding: 2px 5px; border-radius: 2px; background: rgba(0, 0, 0, .75); color: #fff; font-size: 12px; }
+.nichan-gallery-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 5px; font-size: 12px; }
+.nichan-gallery-preview { display: none; min-width: 0; border: 1px solid var(--nichan-gallery-border, rgba(128, 128, 128, .4)); border-radius: 3px; background: var(--nichan-gallery-background, rgba(128, 128, 128, .08)); }
+.nichan-gallery-ready .nichan-gallery-layout { display: grid; grid-template-columns: minmax(260px, .85fr) minmax(0, 1.15fr); gap: 18px; align-items: start; }
+.nichan-gallery-ready .nichan-gallery-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.nichan-gallery-ready .nichan-gallery-preview { display: block; position: sticky; top: 40px; }
+.nichan-gallery-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px; }
+.nichan-gallery button { border: 1px solid var(--nichan-gallery-border, rgba(128, 128, 128, .5)); border-radius: 3px; background: var(--nichan-gallery-button, rgba(128, 128, 128, .15)); color: var(--nichan-gallery-button-text, inherit); padding: 6px 12px; font: inherit; cursor: pointer; }
+.nichan-gallery button:not(:disabled):hover { background: var(--nichan-gallery-hover, rgba(128, 128, 128, .25)); }
+.nichan-gallery button:disabled { opacity: .35; cursor: default; }
+.nichan-gallery a:focus-visible, .nichan-gallery button:focus-visible, .nichan-tree-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.nichan-gallery-media { min-height: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; padding: 8px; overflow: hidden; }
+.nichan-gallery-media > img, .nichan-gallery-media > video { display: block; max-width: 100%; max-height: max(220px, calc(100vh - 330px)); width: auto; height: auto; object-fit: contain; }
+.nichan-gallery-media > audio { width: 100%; max-width: 440px; }
+.nichan-gallery-media > i { font-size: 72px; opacity: .7; }
+.nichan-gallery-caption { border-top: 1px solid rgba(128, 128, 128, .3); padding: 10px; overflow-wrap: anywhere; }
+.nichan-gallery-caption .ng-details { margin-top: 4px; font-size: 12px; }
+.nichan-gallery-caption .ng-text { margin: 8px 0; }
+.nichan-gallery-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.nichan-gallery-empty { text-align: center; padding: 32px 8px; }
+@media only screen and (max-width: 768px) {
+	.nichan-gallery { padding: 0; }
+	.nichan-gallery-ready .nichan-gallery-layout { display: flex; flex-direction: column; gap: 12px; }
+	.nichan-gallery-ready .nichan-gallery-preview { position: static; order: -1; width: 100%; box-sizing: border-box; scroll-margin-top: 44px; }
+	.nichan-gallery-grid { width: 100%; }
+	.nichan-gallery-media { min-height: 150px; }
+	.nichan-gallery-media > img, .nichan-gallery-media > video { max-height: 50vh; }
+}
+
+/* news: the front page block, news.php */
+.nichan-news-list { list-style: none; padding: 0; margin: 0; }
+.nichan-news-list li { padding: 5px 0; border-bottom: 1px solid rgba(128, 128, 128, .25); }
+.nichan-news-list li:last-child { border-bottom: 0; }
+.nichan-news-list a { font-weight: bold; }
+.nichan-news-date { opacity: .65; font-size: 90%; margin-left: 6px; }
+.nichan-news-summary { opacity: .85; margin-top: 2px; }
+.nichan-news-page { max-width: 820px; margin: 0 auto 30px; padding: 0 8px; text-align: left; }
+.nichan-news-page .nichan-news-meta { opacity: .7; margin-bottom: 8px; }
+.nichan-news-page > .nichan-news-summary { font-style: italic; font-size: 110%; margin: 0 0 12px; }
+.nichan-news-page .nichan-news-body { line-height: 1.5; word-wrap: break-word; overflow-wrap: anywhere; }
+.nichan-news-others { margin-top: 24px; padding-top: 8px; border-top: 1px solid rgba(128, 128, 128, .35); }
+.nichan-news-others h2 { font-size: 16px; margin: 0 0 6px; text-align: left; }
+.nichan-news-archived { padding: 6px 10px; border: 1px dashed #c9302c; border-radius: 6px; }
+
+/* full-screen picture / video ("На весь екран" in the settings) */
+html.nichan-viewer-open { overflow: hidden; }
+.nichan-viewer { position: fixed; inset: 0; z-index: 6000; display: flex; align-items: center; justify-content: center;
+	background: rgba(0, 0, 0, .9); cursor: zoom-out; }
+.nichan-viewer img, .nichan-viewer video { max-width: 100vw; max-height: 100vh; width: auto; height: auto; object-fit: contain; display: block; }
+.nichan-viewer .nichan-video-box { max-width: 100vw; max-height: 100vh; }
+.nichan-viewer img.nichan-viewer-loading { min-width: min(60vw, 60vh); filter: blur(2px); opacity: .8; }
+.nichan-viewer-video, .nichan-viewer video { cursor: default; }
+.nichan-viewer-video { cursor: zoom-out; }
+.nichan-viewer-close { position: fixed; top: 8px; right: 14px; font-size: 32px; line-height: 1; color: #fff !important; text-decoration: none !important;
+	text-shadow: 0 0 6px #000; opacity: .8; }
+.nichan-viewer-close:hover { opacity: 1; }
+
+/* /all/: "/n/ - Розмови про Нічан (сховати нитки з цієї дошки)" above each thread */
+h2.ukko-board { font-size: 15px; text-align: left; margin: 12px 0 4px; }
+h2.ukko-board > a:first-child { font-weight: bold; }
+h2.ukko-board .ukkohide { font-weight: normal; font-size: 12px; margin-left: 6px; }
+
+/* the boards dropdown of the top menu (phones): long names only in the opened list */
+.pages.topleft select.mobileShow { max-width: 96px; }
+
+/* settings: boards in the menu / on /all/ */
+table.s-boards { border-collapse: collapse; }
+table.s-boards th, table.s-boards td { padding: 2px 10px 2px 0; text-align: left; }
+table.s-boards td + td, table.s-boards th + th { text-align: center; }
+.nichan-viewer img, .nichan-viewer .nichan-video-box { transition: transform .05s linear; }
+/* a video opened in its post */
+/* a player with a layer over all of it but the controls strip (js/nichan.js: videoWithHitLayer) */
+.nichan-video-box { position: relative; display: inline-block; line-height: 0; max-width: 100%; }
+.nichan-video-box video { display: block; }
+.nichan-video-hit { position: absolute; left: 0; right: 0; top: 0; bottom: 56px; cursor: zoom-out; }
+.nichan-inline-video { display: block; width: fit-content; }
+.nichan-inline-video video { max-width: 100%; max-height: 90vh; width: auto; height: auto; }
+
+/* front page blocks and the first post's picture: the layout for every style (colours come from the style;
+   :where() keeps these rules weaker than any style's own) */
+:where(.box-wrap) { max-width: 80%; min-width: 40%; margin: 30px auto; overflow: auto; padding: 0; }
+:where(.box) { margin: auto; padding: 0; }
+:where(.box.left, .box.images) { width: 50%; }
+:where(.box.images) { text-align: center; min-height: 140px; }
+:where(.box h2) { padding: 3px 7px; font-size: 12pt; margin: 0; }
+:where(.box ul) { padding: 2px 15px; }
+:where(.box ul li) { list-style: none; margin: 0; }
+:where(.box img) { float: none; margin: 10px auto; }
+@media only screen and (max-width: 480px) {
+	:where(.box-wrap) { max-width: 90%; min-width: 90%; }
+	:where(.box.left, .box.images) { width: 90%; }
+	.file:not(.multifile) .post-image { float: none; }
+}
+
+/* phones: the right part of the top menu joins the left one's line (js/nichan.js), nothing overlaps */
+.pages.topright.nichan-tr-inline { position: static !important; display: inline-block !important; white-space: nowrap; padding: 0 !important; margin: 0 0 0 4px !important;
+	background: none !important; border: 0 !important; box-shadow: none !important; float: none !important; }
+@media only screen and (max-width: 768px) {
+	.pages.topleft { right: 0; white-space: normal; }
+	.pages.topleft select.mobileShow { max-width: 62px; padding-left: 0; padding-right: 0; }
+}
+@media only screen and (max-width: 480px) {
+	.pages.topleft { font-size: 12px !important; padding-left: 4px !important; padding-right: 4px !important; }
+	.pages.topleft select.mobileShow { max-width: 56px; font-size: 12px; }
+}
+
+/* "Стиль:" in the bottom right corner of every page (js/nichan.js; replaces style-select.js's) */
+div.styles, #style-select { display: none !important; }
+.nichan-style-switch { clear: both; text-align: right; margin: 10px 8px 12px; font-size: 13px; }
+.nichan-style-switch select { font-size: 13px; margin-left: 4px; }
+.nichan-board-end, #thread-interactions.nichan-thread-end {
+	clear: both; display: grid; grid-template-columns: minmax(0, 1fr) fit-content(42%);
+	align-items: baseline; column-gap: clamp(8px, 2vw, 18px); margin: 8px 0; text-align: left;
+}
+.active-index form[name="postcontrols"] { margin-bottom: 0; }
+.active-index .nichan-board-end { margin-top: 4px; }
+.nichan-theme-slot, .nichan-board-end .nichan-style-switch { margin: 0; text-align: right; }
+.nichan-board-end .nichan-style-switch { font-size: inherit; }
+.nichan-board-nav nav { text-align: left; }
+.nichan-board-nav [aria-current="page"] { font-weight: bold; }
+.nichan-visit-stats { margin-top: .55em; }
+.nichan-thread-end #thread_stats { float: none; margin: 0; text-align: right; }
+.nichan-thread-actions, .nichan-thread-actions .nichan-thread-updates {
+	display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px;
+}
+.nichan-update-slot { display: contents; }
+.nichan-thread-actions .nichan-thread-updates { margin: 0; }
+.nichan-thread-actions .u-group { display: inline-flex; gap: 4px 6px; flex-wrap: wrap; align-items: baseline; }
+.nichan-thread-actions .u-group::before { content: "|"; opacity: .65; }
+.nichan-thread-updates .u-now { background: none; border: 0; margin: 0; padding: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
+.nichan-thread-updates label { cursor: pointer; }
+.nichan-thread-updates .u-countdown { font-variant-numeric: tabular-nums; }
+.nichan-thread-updates .u-countdown:empty, .nichan-thread-updates .u-status:empty { display: none; }
+
+/* settings window (js/nichan.js: openSettings): the style's own colours and fonts; js/nichan.js sets --ns-bg (the
+   page's background) and --ns-accent (the style's link colour) */
+html.nichan-settings-open { overflow: hidden; }
+.nichan-settings-overlay { position: fixed; inset: 0; z-index: 5500; background: rgba(0, 0, 0, .55); display: flex; align-items: center; justify-content: center; }
+.nichan-settings-dialog { --ns-line: rgba(128, 128, 128, .45); display: flex; width: 680px; max-width: calc(100vw - 20px); height: 520px; max-height: calc(100vh - 20px); text-align: left;
+	border: 1px solid var(--ns-line); border-radius: 6px; overflow: hidden; box-shadow: 0 6px 30px rgba(0, 0, 0, .5); background: var(--ns-bg, #fff); }
+.nichan-settings-dialog a { color: var(--ns-accent); text-decoration: none; }
+.ns-tabs { flex: none; width: 118px; background: rgba(128, 128, 128, .16); border-right: 1px solid var(--ns-line); overflow-y: auto; padding: 6px 0; }
+.ns-tabs a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 6px; color: inherit !important; text-align: center; font-size: .9em; line-height: 1.25; }
+.ns-tabs a i { font-size: 20px; }
+.ns-tabs a:hover { background: rgba(128, 128, 128, .18); }
+.ns-tabs a.active { color: var(--ns-accent) !important; background: var(--ns-bg, transparent); }
+.ns-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ns-head { position: relative; flex: none; padding: 9px 36px 7px; text-align: center; border-bottom: 1px solid var(--ns-line); }
+.ns-title { font-size: 1.25em; font-weight: bold; color: var(--ns-accent); }
+.ns-close { position: absolute; right: 10px; top: 4px; font-size: 24px; line-height: 1; color: inherit !important; opacity: .75; }
+.ns-close:hover { opacity: 1; }
+.ns-panels { flex: 1; overflow-y: auto; padding: 8px 12px 12px; }
+.ns-panels fieldset { border: 1px solid var(--ns-line); border-radius: 4px; margin: 0 0 10px; padding: 6px 10px 8px; background: none; }
+.ns-panels legend { padding: 0 4px; }
+.ns-panels .ns-row { display: block; margin: 5px 0; }
+.ns-panels textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; }
+.ns-panels button { font: inherit; padding: 3px 12px; background: rgba(128, 128, 128, .18); color: inherit; border: 1px solid var(--ns-line); border-radius: 3px; cursor: pointer; }
+.ns-panels button:hover { background: rgba(128, 128, 128, .3); }
+.ns-panels ul { margin: 4px 0; padding-left: 18px; }
+.ns-warn { color: #d33; }
+/* a two-word switch: [left] (o) [right] */
+.ns-toggle-wrap { white-space: nowrap; }
+.ns-toggle-wrap .ns-off, .ns-toggle-wrap .ns-on { opacity: .6; }
+.ns-toggle-wrap:has(input:not(:checked)) .ns-off, .ns-toggle-wrap:has(input:checked) .ns-on { opacity: 1; font-weight: bold; }
+.ns-toggle { position: relative; display: inline-block; width: 34px; height: 18px; vertical-align: middle; margin: 0 4px; }
+.ns-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.ns-toggle span { position: absolute; inset: 0; background: #b9b9b9; border-radius: 18px; cursor: pointer; transition: background .15s; }
+.ns-toggle span::before { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: transform .15s; }
+.ns-toggle input:checked + span { background: var(--ns-accent, #1d63c4); }
+.ns-toggle input:checked + span::before { transform: translateX(16px); }
+@media only screen and (max-width: 600px) {
+	.nichan-settings-dialog { flex-direction: column; width: 100vw; max-width: 100vw; height: 100%; max-height: 100%; border-radius: 0; }
+	.nichan-settings-overlay { align-items: stretch; }
+	.ns-tabs { width: auto; display: flex; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--ns-line); padding: 0; }
+	.ns-tabs a { flex: 1 0 auto; padding: 6px 8px; font-size: 11px; }
+	.ns-tabs a i { font-size: 16px; }
+	.ns-panels input[type="text"], .ns-panels select, .ns-panels textarea { font-size: 16px; }
+}
+/* a bracket group of the top menu never breaks inside; when the line is too long, whole groups wrap */
+.nichan-nav-group { white-space: nowrap; }
+
+/* a hidden spoiler hides its letters in every style: some styles outline all text with text-shadow,
+   which drew the letters even when their colour matched the spoiler's */
+span.spoiler:not(:hover), span.spoiler:not(:hover) * { text-shadow: none !important; }
+span.spoiler:not(:hover) a, span.spoiler:not(:hover) span { color: inherit !important; }
+#front-posts .spoiler:not(:hover) * { color: inherit !important; background: transparent !important; }
+
+/* "Поки вас не було" (front page) and the count next to the home icon */
+.nichan-since-badge { font-size: 85%; }
+.nichan-since ul { margin: .3em 0; padding-left: 1.4em; }
+.nichan-since p { margin: .4em 0; }
+.nichan-since { position: relative; }
+.nichan-since-close { position: absolute; top: 4px; right: 8px; z-index: 2; font-size: 20px; line-height: 1; font-weight: bold; text-decoration: none; opacity: .8; }
+.nichan-since-close:hover { opacity: 1; }
+
+/* «Хто тут?» on a board page */
+.nichan-whohere-list { margin: .4em 0; line-height: 1.6; }
+
+/* banners above the board's name (mod.php -> Банери): 300×100, others fitted into it; narrower on phones */
+img.board_image.nichan-banner { width: 300px; max-width: calc(100% - 16px); height: auto; aspect-ratio: 3 / 1; object-fit: contain; }
+
+/* «Спитати долю»: fate's word under the post, like «Відповіді» (the colour: the style's greentext) */
+.nichan-fate { clear: both; font-size: 85%; margin: 4px 0 2px 0.4em; font-style: italic; } /* (as .nichan-replies) */
+.nichan-fate .quote { font-style: italic; }
+/* «Параметри» of the post form in one row */
+.nichan-options label.nichan-opt { margin-right: 12px; white-space: nowrap; }
+
+/* the eye before "File": that one picture almost see-through until hovered, as «Сховати картинки» does for all */
+.nichan-file-muted .post-image:not(:hover) { opacity: 0.03; }
+.nichan-file-mute { text-decoration: none; margin-right: 4px; opacity: .75; }
+.nichan-file-mute:hover { opacity: 1; }
+
+/* the ban page: the warning above the appeal form */
+.nichan-appeal-warn { padding: 6px 10px; border-left: 3px solid #c90; background: rgba(204, 153, 0, .12); }
+
+/* news: the discussion thread under the text */
+.nichan-news-discussion { margin: 12px 0; padding: 6px 10px; border-left: 3px solid rgba(128, 128, 128, .5); }
+
+/* "(5 хвилин тому)" after the date of a post (js/local-time.js) */
+.nichan-ago { opacity: .7; }
+
+/* board pages, "compact" view (js/nichan.js: setupBoardView): the cut first post and the short replies */
+.nichan-cbody, .nichan-csnip { display: none; }
+html.nichan-compact div.post.op.nichan-has-cbody:not([data-nichan-full]) > div.body:not(.nichan-cbody) { display: none; }
+html.nichan-compact div.post.op.nichan-has-cbody:not([data-nichan-full]) > div.body.nichan-cbody { display: block; }
+html.nichan-compact .thread div.post.reply:not([data-nichan-full]) > .files,
+html.nichan-compact .thread div.post.reply:not([data-nichan-full]) > div.body,
+html.nichan-compact .thread div.post.reply:not([data-nichan-full]) > .nichan-replies,
+html.nichan-compact .thread div.post.reply:not([data-nichan-full]) > .nichan-fate,
+html.nichan-compact .thread div.post.reply:not([data-nichan-full]) > .nichan-img-show { display: none; }
+html.nichan-compact .thread div.post.reply:not([data-nichan-full]) > .nichan-csnip { display: block; margin: 2px 12px 6px; cursor: pointer; }
+.nichan-cfiles { font-size: 90%; margin-bottom: 2px; }
+.nichan-ctext { overflow-wrap: anywhere; }
+
+/* «Розмір тексту» in the settings: the stylesheets give sizes in pt/px, so the text is zoomed — the posts' text (their
+   pictures and the popups placed by the scripts stay as they are) and the pages without posts: the front page, statistics,
+   search, FAQ and the settings window (its contents: the window keeps its size on the screen).
+   Something zoomed inside something zoomed (a post shown inside a post's text) is not zoomed twice. */
+html.nichan-text-scaled :is(div.post > p.intro, div.post > div.body, div.post > .nichan-replies, div.post > .nichan-csnip,
+	center.boards-list, .nichan-front-motto, div.box-wrap, .nichan-stats, .nichan-search, .nichan-faq, #nichan-settings, .ns-panel, .ns-title) { zoom: var(--nichan-text, 1); }
+html.nichan-text-scaled :is(div.post, div.box-wrap, .nichan-stats, .nichan-search, .nichan-faq, #nichan-settings)
+	div.post > :is(p.intro, div.body, .nichan-replies, .nichan-csnip) { zoom: 1; }
+/* the front page's pictures keep their size, like the posts' */
+html.nichan-text-scaled div.box-wrap img { zoom: calc(1 / var(--nichan-text, 1)); }
+/* the front page's panels (half of the row in every style) widen with the text, up to the whole row; a smaller text
+   keeps them as they are (on phones they take the whole row anyway: see the max-width: 768px block above) */
+@media only screen and (min-width: 769px) {
+	html.nichan-text-scaled div.box-wrap .box { width: min(100%, calc(50% * max(1, var(--nichan-text, 1)))); }
+}
+
+/* The front page on a computer: the logo (the motto centred under it) and the boards in a column at the left edge that
+   doesn't move when the page scrolls (fixed where it stands; its grid column stays empty), the panels from the top of the page. Wide screens get an empty column of the same width on the right,
+   so the panels stand in the page's middle; narrower ones keep the panels next to the column. Phones: one column. */
+@media only screen and (min-width: 1024px) {
+	.nichan-front { --nichan-side: min(300px, max(240px, 25vw)); display: grid; grid-template-columns: var(--nichan-side) minmax(0, 1fr);
+		column-gap: 32px; align-items: start; padding: 0 16px; }
+	.nichan-front-side { position: fixed; width: var(--nichan-side); max-height: calc(100vh - 56px); overflow-y: auto; padding-top: 12px; }
+	.nichan-front-logo { width: fit-content; max-width: 100%; }
+	.nichan-front-logo p.nichan-front-motto { margin: 4px 0 14px; }
+	.nichan-front-side center.boards-list { text-align: left; }
+	.nichan-front > .box-wrap { grid-column: 2; width: auto; max-width: 860px; min-width: 0; margin: 12px 0 30px; }
+	html .nichan-front > div.box-wrap .box { width: auto; float: none; margin: 0 0 14px; }
+	.nichan-front > .box-wrap > br { display: none; }
+}
+@media only screen and (min-width: 1300px) {
+	.nichan-front { grid-template-columns: var(--nichan-side) minmax(0, 1fr) var(--nichan-side); }
+	.nichan-front > .box-wrap { width: 100%; justify-self: center; }
+}

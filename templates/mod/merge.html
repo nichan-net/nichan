@@ -1,0 +1,39 @@
+<form action="?/{{ board }}/merge/{{ post }}" method="post" onsubmit="btnSubmit.disabled = true; return true;">
+	<input type="hidden" name="token" value="{{ token }}">
+	<table>
+		<tr>
+			<th>Тред, що приєднується</th>
+			<td>
+				&gt;&gt;&gt;{{ config.board_abbreviation|sprintf(board) }}{{ post }}
+				{% if op.subject %}«{{ op.subject|e }}»{% endif %}
+				<span class="unimportant">(ОП + {{ replies }} відповідей)</span>
+			</td>
+		</tr>
+		<tr>
+			<th>Дошка цільового треду</th>
+			<td>
+				<select name="target_board">
+					{% for targetboard in boards %}
+						<option value="{{ targetboard.uri }}" {% if targetboard.uri == board %}selected{% endif %}>
+							{{ config.board_abbreviation|sprintf(targetboard.uri) }} - {{ targetboard.title|e }}
+						</option>
+					{% endfor %}
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th>Цільовий тред</th>
+			<td>
+				<input type="text" name="target_thread" size="30" placeholder="номер, >>номер або посилання" required autofocus>
+			</td>
+		</tr>
+	</table>
+	<p class="unimportant" style="max-width:560px;margin:10px auto">
+		Усі пости цього треду (разом з ОП-постом) стануть відповідями в цільовому треді, а сам тред зникне.
+		На тій самій дошці номери постів не змінюються і посилання на них оновлюються автоматично.
+		При об'єднанні з тредом іншої дошки пости отримають там нові номери, файли буде перенесено.
+	</p>
+	<ul style="padding:0;text-align:center;list-style:none">
+		<li><input type="submit" name="btnSubmit" value="Об'єднати треди"></li>
+	</ul>
+</form>

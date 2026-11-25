@@ -1,0 +1,87 @@
+body {
+    color: #CCCCCC;
+    background: #1E1E1E;
+}
+
+header div.subtitle, h1 {
+    color: #CCCCCC;
+}
+.greetings h1 {
+  letter-spacing: 1px;
+  font-size: 20pt;
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+}
+.box-wrap {
+        max-width: 670px;
+        min-width: 332px;
+        margin: 30px auto;
+        overflow: auto;
+        padding: 0;
+}
+.box {
+        background: white;
+        border: 1px solid #98E;
+        width: 330px;
+        margin: 8px 0;
+        padding: 0;
+}
+.boxstats {
+        background: white;
+        border: 1px solid #98E;
+        width: 668px;
+        margin: 8px 0;
+        padding: 0;
+        text-align: center;
+}
+.box ul {
+        padding: 2px 15px;
+}
+.box ul li {
+        list-style: none;
+        margin: 0;
+}
+.box.left {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        float: left;
+}
+.box.right {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        float: right;
+}
+.boxstats.center {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+        float: right;
+}
+ 
+.box h2 {
+        padding: 3px 7px;
+        font-size: 12pt;
+        border: #555555 1px solid;
+}
+.box.left h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.box.right h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.boxstats.center h2 {
+        background: #333333;
+        color: #CCCCCC;
+        border: #555555 1px solid;
+}
+.box img {
+        float: none;
+        margin: 10px auto;
+}

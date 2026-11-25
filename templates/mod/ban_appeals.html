@@ -1,0 +1,35 @@
+<div style="max-width:980px;margin:0 auto;padding:0 8px">
+<p class="unimportant">Оскарження на розгляді. Заблокований може надіслати лише одне оскарження на бан; якщо його відхилити, бан лишається
+	як є, і оскаржити його знову не можна. Оскарження приходять і в Telegram, з кнопками «Зняти бан» / «Відхилити».</p>
+{% if not ban_appeals|length %}
+<p><em>Оскаржень на розгляді немає.</em></p>
+{% endif %}
+{% for ban in ban_appeals %}
+<form action="" method="post" style="margin: 10px 0" id="appeal-{{ ban.id }}">
+	<input type="hidden" name="token" value="{{ token }}">
+	<table class="modlog" style="width:100%">
+		<tr><th style="width:170px">Бан</th><td>
+			{% if ban.expires != 0 and ban.expires < time() %}строк минув{% else %}діє{% endif %}
+			{% if mod|hasPermission(config.mod.show_ip, board.uri) %} · <a href="?/IP/{{ ban.mask|url_encode }}">{{ ban.mask }}</a>{% endif %}
+			· {% if ban.board %}{{ config.board_abbreviation|sprintf(ban.board) }}{% else %}усі дошки{% endif %}
+		</td></tr>
+		<tr><th>Причина бану</th><td>{% if ban.reason %}{{ ban.reason }}{% else %}<em>не вказано</em>{% endif %}</td></tr>
+		<tr><th>Видано</th><td>{{ ban.created|ldate('d.m.Y H:i') }}{% if ban.username %} · {{ ban.username|e }}{% endif %}</td></tr>
+		<tr><th>Закінчується</th><td>{% if ban.expires %}{{ ban.expires|ldate('d.m.Y H:i') }}{% else %}<em>ніколи</em>{% endif %}</td></tr>
+		<tr><th>Оскарження</th><td><span class="unimportant">{{ ban.time|ldate('d.m.Y H:i') }}</span><div style="white-space:pre-wrap;overflow-wrap:anywhere;margin-top:4px">{{ ban.message|e }}</div></td></tr>
+		{% if mod|hasPermission(config.mod.ban_appeals, board.uri) %}
+		<tr><th></th><td>
+			<input type="hidden" name="appeal_id" value="{{ ban.id }}">
+			<input type="submit" name="unban" value="Зняти бан" onclick="return confirm('Зняти бан?')">
+			<input type="submit" name="deny" value="Відхилити оскарження" onclick="return confirm('Відхилити? Оскаржити цей бан знову буде не можна.')">
+		</td></tr>
+		{% endif %}
+	</table>
+	{% if ban.post %}
+		<p class="unimportant" style="margin:6px 0 2px">Допис, за який видано бан:</p>
+		<div>{{ ban.post.build(true) }}</div>
+	{% endif %}
+</form>
+<hr>
+{% endfor %}
+</div>

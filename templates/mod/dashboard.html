@@ -1,0 +1,102 @@
+{# The panel's front page: what waits first, then the site and its boards. The full menu is on the left (mod/nav.html). #}
+<div class="na-tiles">
+	{% if mod|hasPermission(config.mod.reports) %}
+	<a class="na-tile{% if reports > 0 %} hot{% endif %}" href="?/reports"><div class="n">{{ reports }}</div><div class="l">скарг у черзі</div></a>
+	{% endif %}
+	{% if mod|hasPermission(config.mod.nichan_premod) %}
+	<a class="na-tile{% if nichan_pending_count > 0 %} hot{% endif %}" href="?/nichan-pending"><div class="n">{{ nichan_pending_count }}</div><div class="l">ниток на перевірці</div></a>
+	{% endif %}
+	{% if config.ban_appeals and mod|hasPermission(config.mod.view_ban_appeals) %}
+	<a class="na-tile{% if nichan_appeals_count > 0 %} hot{% endif %}" href="?/ban-appeals"><div class="n">{{ nichan_appeals_count }}</div><div class="l">банів на апеляції</div></a>
+	{% endif %}
+	<a class="na-tile{% if unread_pms > 0 %} hot{% endif %}" href="?/inbox"><div class="n">{{ unread_pms }}</div><div class="l">непрочитаних повідомлень</div></a>
+	{% if mod|hasPermission(config.mod.view_banlist) %}
+	<a class="na-tile" href="?/bans"><div class="n">{{ active_bans }}</div><div class="l">активних банів</div></a>
+	{% endif %}
+	<a class="na-tile" href="/statistics.php" target="_blank"><div class="n">{{ site_stats.total.day_posts }}</div><div class="l">дописів за добу · {{ site_stats.total.day_posters }} дописувачів</div></a>
+</div>
+
+{% if nichan_locked_boards is defined and nichan_locked_boards %}
+<fieldset style="border-color:#c9302c">
+	<legend>Увага</legend>
+	Створення ниток зараз вимкнено на {{ nichan_locked_boards }}. <a href="?/nichan-filters">Флуд і рейди →</a>
+</fieldset>
+{% endif %}
+
+<fieldset>
+	<legend>Дошки</legend>
+	<table class="modlog na-boards">
+		<tr><th>Дошка</th><th>Назва</th><th>За добу</th><th>Дії</th></tr>
+		{% for board in boards %}
+		{% set bs = site_stats.boards[board.uri] %}
+		<tr>
+			<td><a href="?/{{ config.board_path|sprintf(board.uri) }}{{ config.file_index }}"><strong>/{{ board.uri }}/</strong></a></td>
+			<td>{{ board.title|e }}</td>
+			<td class="n">{{ bs ? bs.day_posts : '—' }}</td>
+			<td class="acts">
+				<a href="/{{ board.uri }}/" target="_blank" title="Відкрити дошку на сайті"><i class="fa fa-external-link"></i></a>
+				{% if mod|hasPermission(config.mod.nichan_unarchive) %}<a href="?/{{ board.uri }}/archive" title="Архів"><i class="fa fa-archive"></i> архів</a>{% endif %}
+				{% if board.uri in flag_boards %}<a href="?/nichan-flags/{{ board.uri }}" title="Позначки дошки"><i class="fa fa-flag-o"></i> позначки</a>{% endif %}
+				{% if mod|hasPermission(config.mod.edit_pages) %}<a href="?/edit_pages/{{ board.uri }}" title="Сторінки дошки"><i class="fa fa-file-text-o"></i> сторінки</a>{% endif %}
+				{% if mod|hasPermission(config.mod.manageboards) %}<a href="?/edit/{{ board.uri }}" title="Назва, опис, видалення дошки"><i class="fa fa-pencil"></i> редагувати</a>{% endif %}
+			</td>
+		</tr>
+		{% endfor %}
+	</table>
+	<div class="na-tip">За місяць дописувачів на сайті: {{ site_stats.total.month_posters }}. Капча, видимість і закриття дошок — у «Налаштування дошок».</div>
+</fieldset>
+
+<div class="na-cols">
+	{% if mod|hasPermission(config.mod.noticeboard) %}
+	<fieldset>
+		<legend>Дошка оголошень команди</legend>
+		{% if noticeboard|count > 0 %}
+		<ul>
+			{% for post in noticeboard %}
+			<li><a href="?/noticeboard#{{ post.id }}">{% if post.subject %}{{ post.subject|e }}{% else %}<em>без теми</em>{% endif %}</a>
+				<span class="unimportant">— {{ post.username ? post.username|e : '?' }}, {{ post.time|ldate('d.m.Y H:i') }}</span></li>
+			{% endfor %}
+		</ul>
+		{% else %}
+		<p class="unimportant">Оголошень немає.</p>
+		{% endif %}
+		<a href="?/noticeboard">Усі оголошення →</a>
+	</fieldset>
+	{% endif %}
+
+	{% if mod|hasPermission(config.mod.search) %}
+	<fieldset>
+		<legend>Пошук у панелі</legend>
+		{% include 'mod/search_form.html' %}
+		<div class="na-tip">Дописи, бани, журнал і нотатки до IP. Пошук для відвідувачів — <a href="/search.php" target="_blank">search.php</a>.</div>
+	</fieldset>
+	{% endif %}
+</div>
+
+<fieldset>
+	<legend>Поради</legend>
+	<div class="na-tip">На сторінці дошки чи нитки в панелі можна поставити галочки на кількох дописах і внизу натиснути «Видалити вибрані»
+		(з баном авторів або лише файли). Нитку можна об'єднати з іншою кнопкою {{ config.mod.link_merge }} біля першого допису,
+		а під будь-яким дописом лишити примітку червоним курсивом кнопкою {{ config.mod.link_note }}.</div>
+</fieldset>
+
+{% if config.mod.dashboard_links and config.mod.dashboard_links|count > 0 %}
+<fieldset>
+	<legend>Інші посилання</legend>
+	<ul>{% for label,link in config.mod.dashboard_links %}<li><a href="{{ link }}">{{ label }}</a></li>{% endfor %}</ul>
+</fieldset>
+{% endif %}
+
+{% if config.debug %}
+<fieldset>
+	<legend>Debug</legend>
+	<a href="?/debug/antispam">Anti-spam</a> · <a href="?/debug/recent">Recent posts</a>{% if mod|hasPermission(config.mod.debug_sql) %} · <a href="?/debug/sql">SQL</a>{% endif %}
+</fieldset>
+{% endif %}
+
+{% if newer_release %}
+<fieldset>
+	<legend>Оновлення</legend>
+	Є новіша версія vichan (v{{ newer_release.massive }}.{{ newer_release.major }}.{{ newer_release.minor }}).
+</fieldset>
+{% endif %}

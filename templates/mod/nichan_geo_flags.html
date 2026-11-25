@@ -1,0 +1,47 @@
+{% macro pic(file) %}{% if file %}<img src="{{ config.root }}static/flags/{{ file|e }}" alt="" style="max-width:48px;max-height:32px;vertical-align:middle">{% endif %}{% endmacro %}
+{% import _self as f %}
+<form method="post" action="?/nichan-geo-flags/{{ uri }}" enctype="multipart/form-data" class="na-form">
+	<input type="hidden" name="token" value="{{ token }}">
+	<input type="hidden" name="save" value="1">
+	<p><a href="?/nichan-board/{{ uri }}">← Налаштування /{{ uri }}/</a></p>
+	<p class="unimportant">Свої картинки замість стандартних прапорців геолокації на /{{ uri }}/ — і в нових, і в старих дописах. PNG, GIF, JPEG або WEBP до 200 КБ;
+		показуються в розмірі прапорця (16×11), пропорції зберігаються. Без картинки — стандартний прапорець; область без картинки — прапор України
+		(або ваша картинка для UA, якщо її задано).</p>
+
+	<fieldset>
+		<legend>Області України</legend>
+		{% if geo != 2 %}<p class="unimportant">Показуються, коли геолокація дошки — «детальна».</p>{% endif %}
+		<table class="modlog" style="width:100%">
+			<tr><th>Область</th><th>Зараз</th><th>Нова картинка</th><th>Прибрати</th></tr>
+			{% for code, names in regions %}
+			<tr>
+				<td>{{ names[0] }}</td>
+				<td style="text-align:center">{% if list['ua-' ~ code] is defined %}{{ f.pic(list['ua-' ~ code]) }}{% else %}<span class="unimportant">—</span>{% endif %}</td>
+				<td><input type="file" name="r_{{ code }}" accept="image/png,image/gif,image/jpeg,image/webp"></td>
+				<td style="text-align:center">{% if list['ua-' ~ code] is defined %}<input type="checkbox" name="delete[ua-{{ code }}]" value="1">{% endif %}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	</fieldset>
+
+	<fieldset>
+		<legend>Країни</legend>
+		{% if countries|length %}
+		<table class="modlog" style="width:100%">
+			<tr><th>Країна</th><th>Зараз</th><th>Нова картинка</th><th>Прибрати</th></tr>
+			{% for code, c in countries %}
+			<tr>
+				<td>{{ code|upper }} — {{ c.name|e }}</td>
+				<td style="text-align:center">{{ f.pic(c.file) }}</td>
+				<td><input type="file" name="c_{{ code }}" accept="image/png,image/gif,image/jpeg,image/webp"></td>
+				<td style="text-align:center"><input type="checkbox" name="delete[{{ code }}]" value="1"></td>
+			</tr>
+			{% endfor %}
+		</table>
+		{% endif %}
+		<p>Додати: код країни <input type="text" name="new_code" size="3" maxlength="2" placeholder="pl" style="width:4em;display:inline-block">
+			<input type="file" name="new_image" accept="image/png,image/gif,image/jpeg,image/webp" style="display:inline-block;width:auto"></p>
+	</fieldset>
+
+	<p><input type="submit" value="Зберегти"></p>
+</form>

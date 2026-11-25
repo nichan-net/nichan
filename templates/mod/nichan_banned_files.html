@@ -1,0 +1,38 @@
+<div style="max-width:980px;margin:0 auto;padding:0 8px">
+	<p class="unimportant">Заборонені файли не вдасться завантажити на жодну дошку: точні копії (за MD5), а для картинок, заборонених
+		кнопкою {{ config.mod.link_banfile }} біля файлу, — ще й перезбережені чи зменшені копії. Картинки не зберігаються, лише хеші.
+		«Спроб» — скільки разів хтось намагався завантажити такий файл після заборони.</p>
+	{% if bans|length %}
+	<div style="overflow-x:auto">
+	<table class="modlog" style="width:100%">
+		<tr><th>MD5</th><th>Схожі</th><th>Причина</th><th>Звідки</th><th>Коли</th><th>Хто</th><th>Спроб</th>{% if can_unban %}<th></th>{% endif %}</tr>
+		{% for b in bans %}
+		<tr>
+			<td><code title="{{ b.md5 }}">{{ b.md5[:12] }}…</code></td>
+			<td style="text-align:center">{{ b.dhash ? 'так' : '—' }}</td>
+			<td>{{ b.reason|e }}</td>
+			<td>{% if b.origin starts with '/' %}{% set o = b.origin|split('/') %}<a href="?/{{ o.1 }}/">{{ b.origin }}</a>{% else %}{{ b.origin|e }}{% endif %}</td>
+			<td style="white-space:nowrap">{{ b.created|ldate('d.m.Y H:i') }}</td>
+			<td>{{ b.mod|e }}</td>
+			<td style="text-align:center">{{ b.hits }}{% if b.last_hit %}<br><small class="unimportant">{{ b.last_hit|ldate('d.m H:i') }}</small>{% endif %}</td>
+			{% if can_unban %}<td><form method="post" action="?/nichan-banned-files" style="display:inline" onsubmit="return confirm('Зняти заборону з цього файлу?')">
+				<input type="hidden" name="token" value="{{ token }}"><input type="hidden" name="unban" value="{{ b.id }}">
+				<button type="submit">зняти</button></form></td>{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
+	</div>
+	{% else %}
+	<p style="text-align:center"><em>Заборонених файлів поки немає.</em></p>
+	{% endif %}
+
+	<fieldset style="margin-top:14px">
+		<legend>Заборонити за MD5</legend>
+		<form method="post" action="?/nichan-banned-files">
+			<input type="hidden" name="token" value="{{ token }}">
+			<p><textarea name="add_md5" rows="4" cols="60" placeholder="MD5-хеші файлів, по одному в рядку"></textarea></p>
+			<p><label>Причина: <input type="text" name="add_reason" size="40" maxlength="255"></label> <input type="submit" value="Заборонити"></p>
+		</form>
+		<p class="unimportant">Так забороняються лише точні копії. Щоб ловити й перезбережені картинки, забороняйте кнопкою {{ config.mod.link_banfile }} біля файлу в пості.</p>
+	</fieldset>
+</div>
