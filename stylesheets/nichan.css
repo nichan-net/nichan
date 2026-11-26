@@ -192,6 +192,8 @@ div.post.nichan-to-you { border-left: 3px solid #e0a000 !important; }
 
 /* highlighted [code] */
 div.body pre.prettyprint.hljs { padding: 6px 8px; border-radius: 4px; max-width: 100%; overflow-x: auto; white-space: pre; }
+.nichan-formula { display: inline-block; vertical-align: middle; max-width: 100%; overflow-x: auto; }
+.nichan-ed-math { font-family: monospace; border-bottom: 1px dotted currentColor; }
 
 /* a moderator's note under a post; notices at the top of a thread (archive, continuation) */
 .nichan-modnote { color: #d33 !important; font-style: italic; margin-top: 6px; }
@@ -457,6 +459,8 @@ span.spoiler:not(:hover) a, span.spoiler:not(:hover) span { color: inherit !impo
 
 /* banners above the board's name (mod.php -> Банери): 300×100, others fitted into it; narrower on phones */
 img.board_image.nichan-banner { width: 300px; max-width: calc(100% - 16px); height: auto; aspect-ratio: 3 / 1; object-fit: contain; }
+.nichan-banner-link { display: block; width: fit-content; max-width: calc(100% - 16px); margin-inline: auto; }
+.nichan-banner-link > img.board_image.nichan-banner { max-width: 100%; }
 
 /* «Спитати долю»: fate's word under the post, like «Відповіді» (the colour: the style's greentext) */
 .nichan-fate { clear: both; font-size: 85%; margin: 4px 0 2px 0.4em; font-style: italic; } /* (as .nichan-replies) */

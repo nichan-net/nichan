@@ -15,7 +15,7 @@ function nichan_cf_enabled() {
 }
 
 // The address of a written or deleted file, if it is a page Cloudflare could keep.
-function nichan_cf_url($path) {
+function nichan_cf_url($path, $attachment = false) {
 	global $config;
 	$path = str_replace('\\', '/', (string)$path);
 	$root = str_replace('\\', '/', dirname(__DIR__)) . '/';
@@ -24,19 +24,41 @@ function nichan_cf_url($path) {
 	$path = preg_replace('~^(\./)+~', '', $path);
 	if ($path === '' || $path[0] === '/' || strpos($path, '..') !== false)
 		return null;
-	if (!preg_match('~\.(html|json|xml|rss|css|js|webmanifest)$~', $path) || preg_match('~^(tmp|inc|templates|tools)/~', $path))
+	if ((!$attachment && !preg_match('~\.(html|json|xml|rss|css|js|webmanifest)$~', $path))
+			|| preg_match('~^(tmp|inc|templates|tools)/~', $path))
 		return null;
 	return rtrim($config['nichan_public_url'], '/') . $config['root'] . $path;
+}
+
+function nichan_cf_start_queue() {
+	global $nichan_cf_urls;
+	if ($nichan_cf_urls === null) {
+		$nichan_cf_urls = array();
+		register_shutdown_function('nichan_cf_flush');
+	}
+}
+
+function nichan_cf_queue_purge_all() {
+	global $nichan_cf_full_purge;
+	if (nichan_cf_enabled()) {
+		nichan_cf_start_queue();
+		$nichan_cf_full_purge = true;
+	}
+}
+
+function nichan_cf_queue_media($path) {
+	global $nichan_cf_urls;
+	if (nichan_cf_enabled() && ($url = nichan_cf_url($path, true))) {
+		nichan_cf_start_queue();
+		$nichan_cf_urls[$url] = true;
+	}
 }
 
 function nichan_cf_queue($path) {
 	global $nichan_cf_urls, $config;
 	if (!nichan_cf_enabled() || !($url = nichan_cf_url($path)))
 		return;
-	if ($nichan_cf_urls === null) {
-		$nichan_cf_urls = array();
-		register_shutdown_function('nichan_cf_flush');
-	}
+	nichan_cf_start_queue();
 	$nichan_cf_urls[$url] = true;
 	// the front page (recent.html) is the root address "/" too (DirectoryIndex in .htaccess)
 	$root = rtrim($config['nichan_public_url'], '/') . $config['root'];
@@ -65,8 +87,8 @@ function nichan_cf_api($method, $endpoint, $body = null) {
 }
 
 function nichan_cf_flush() {
-	global $nichan_cf_urls;
-	if (!$nichan_cf_urls)
+	global $nichan_cf_urls, $nichan_cf_full_purge;
+	if (!$nichan_cf_urls && !$nichan_cf_full_purge)
 		return;
 	$urls = array_keys($nichan_cf_urls);
 	$nichan_cf_urls = array();
@@ -76,7 +98,8 @@ function nichan_cf_flush() {
 		@litespeed_finish_request();
 	@ignore_user_abort(true);
 	$zone = rawurlencode(nichan_setting('cf_zone_id', ''));
-	$batches = count($urls) > 300 ? array(null) : array_chunk($urls, 30); // (30 addresses per call)
+	$batches = $nichan_cf_full_purge || count($urls) > 300 ? array(null) : array_chunk($urls, 30);
+	$nichan_cf_full_purge = false;
 	foreach ($batches as $batch) {
 		$res = nichan_cf_api('POST', "zones/$zone/purge_cache", $batch === null ? array('purge_everything' => true) : array('files' => $batch));
 		if (!$res || empty($res['success'])) {

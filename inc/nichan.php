@@ -10,7 +10,7 @@
 
 defined('TINYBOARD') or exit;
 
-define('NICHAN_SCHEMA_VERSION', 21);
+define('NICHAN_SCHEMA_VERSION', 23);
 
 // Board visibility levels (``boards``.`visibility`).
 define('NICHAN_VISIBILITY_PUBLIC', 0);
@@ -532,27 +532,59 @@ function nichan_public_board_uris() {
 	return array_map(function ($b) { return $b['uri']; }, nichan_boards_for(false));
 }
 
-/*
- * Static pages of a hidden board are plain files, so Apache must refuse them itself. Uploaded
- * images stay reachable (moderators see them through mod.php; the names are unguessable).
- */
+// Keep all visibility writers serialized until their DB changes and access files agree.
+// Only administrative saves, migrations and board deletion take this lock.
+function nichan_lock_board_access_files() {
+	static $lock;
+	if (is_resource($lock))
+		return;
+	$path = dirname(__DIR__) . '/tmp/nichan-board-access.lock';
+	$lock = @fopen($path, 'c') ?: @fopen($path, 'r');
+	if (!$lock || !flock($lock, LOCK_EX))
+		throw new RuntimeException('Cannot lock the board access settings.');
+}
+
+// Install the rule before making a board private. A single rename keeps the previous
+// protection in force until the new rule is completely written.
+function nichan_protect_board_files($uri) {
+	global $config;
+	$dir = sprintf($config['board_path'], $uri);
+	if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir))
+		throw new RuntimeException("Cannot create the private board directory: " . $dir);
+	$file = $dir . '.htaccess';
+	$root = (string)parse_url($config['root'], PHP_URL_PATH);
+	$target = rtrim($root, '/') . '/private-media.php?board=' . rawurlencode($uri);
+	$rules = "# Written by nichan: restricted board\n" .
+		"Options -Indexes -MultiViews\nRewriteEngine On\n" .
+		// The controller checks the board role and serves only files inside its media directories.
+		"RewriteRule ^.+/[^/]+$ \"$target\" [END]\nRewriteRule ^ - [F,L]\n" .
+		"<IfModule mod_headers.c>\nHeader always set Cache-Control \"private, no-store\"\n" .
+		"Header always set Cloudflare-CDN-Cache-Control \"no-store\"\n</IfModule>\n";
+	if (is_file($file) && file_get_contents($file) === $rules)
+		return;
+	if (is_file($file) && strpos((string)file_get_contents($file), '# Written by nichan') !== 0)
+		throw new RuntimeException("Existing board access rules need review: " . $file);
+	$temp = tempnam($dir, '.nichan-access-');
+	if (!$temp || dirname($temp) !== realpath($dir) || file_put_contents($temp, $rules) !== strlen($rules)
+			|| !chmod($temp, 0644) || !rename($temp, $file)) {
+		if ($temp && is_file($temp))
+			unlink($temp);
+		throw new RuntimeException("Cannot protect the private board directory: " . $dir);
+	}
+	// The old public URLs, including alternate query strings, may already be held at the edge.
+	nichan_cf_queue_purge_all();
+}
+
 function nichan_write_board_access_files() {
 	global $config;
+	nichan_lock_board_access_files();
 	foreach (listBoards() as $b) {
-		$dir = sprintf($config['board_path'], $b['uri']);
-		if (!is_dir($dir))
-			continue;
-		$file = $dir . '.htaccess';
-		$level = (int)$b['visibility'];
-		if ($level == NICHAN_VISIBILITY_STAFF || $level == NICHAN_VISIBILITY_ADMINS) {
-			@file_put_contents($file,
-				"# Written by nichan: this board is not public (see Board settings in mod.php).\n" .
-				"<FilesMatch \"\\.(html|json|rss|xml)$\">\n" .
-				"\t<IfModule mod_authz_core.c>\n\t\tRequire all denied\n\t</IfModule>\n" .
-				"\t<IfModule !mod_authz_core.c>\n\t\tOrder allow,deny\n\t\tDeny from all\n\t</IfModule>\n" .
-				"</FilesMatch>\n");
-		} elseif (is_file($file) && strpos(@file_get_contents($file), 'Written by nichan') !== false) {
-			@unlink($file);
+		$file = sprintf($config['board_path'], $b['uri']) . '.htaccess';
+		if (in_array((int)$b['visibility'], array(NICHAN_VISIBILITY_STAFF, NICHAN_VISIBILITY_ADMINS), true)) {
+			nichan_protect_board_files($b['uri']);
+		} elseif (is_file($file) && strpos((string)file_get_contents($file), '# Written by nichan') === 0) {
+			if (!unlink($file))
+				throw new RuntimeException("Cannot reopen the board directory: " . $file);
 		}
 	}
 }
@@ -590,25 +622,43 @@ function nichan_posting_closed_message($why, $english = false) {
  * /posting-status.css (whole site) and /<board>/posting-status.css. Toggling only rewrites these
  * files; no page has to be rebuilt. Moderator views don't link them.
  */
-function nichan_write_posting_status_files() {
-	global $config;
-	// Captcha of every board for the pages' JavaScript (js/nichan.js adds the widget to the form).
+function nichan_board_status_script(array $uris) {
 	$types = array();
-	foreach (listBoards() as $b) {
-		if ($t = nichan_captcha_type($b['uri']))
-			$types[$b['uri']] = $t;
+	foreach ($uris as $uri) {
+		if ($type = nichan_captcha_type($uri))
+			$types[$uri] = $type;
 	}
-	$key = in_array('recaptcha', $types) ? (string)nichan_setting('recaptcha_public') : '';
-	@file_put_contents('site-status.js', '/* written by nichan (mod.php -> Board settings) */ window.nichanStatus = ' .
-		// "country": boards ('*' = every board) where captcha.php?need=1 is asked whether this visitor needs one
-		json_encode(array('captcha' => array('key' => $key, 'boards' => (object)$types, 'country' => nichan_country_captcha_boards()),
-			// boards whose posts get the [translate] button (mod.php -> Board settings)
-			'translate' => array_values(array_filter(array_map(function ($b) { return $b['uri']; }, listBoards()), 'nichan_board_translate_on')),
-			// the board pages' view for those who have not picked one (mod.php -> Сайт: назва й меню)
-			'view' => (string)nichan_setting('board_view_default', 'standard'),
-			// the banners of each board (mod.php -> Банери)
-			'banners' => (object)nichan_banner_map()), JSON_UNESCAPED_SLASHES) . ";\n");
-	nichan_cf_queue('site-status.js');
+	$country = nichan_country_captcha_boards();
+	$banners = nichan_banner_map($uris, $links);
+	$status = array(
+		'captcha' => array('key' => in_array('recaptcha', $types, true) ? (string)nichan_setting('recaptcha_public') : '',
+			'boards' => (object)$types, 'country' => in_array('*', $country, true) ? array('*') : array_values(array_intersect($country, $uris))),
+		'translate' => array_values(array_filter($uris, 'nichan_board_translate_on')),
+		'view' => (string)nichan_setting('board_view_default', 'standard'),
+		'banners' => (object)$banners, 'bannerLinks' => (object)$links
+	);
+	return 'window.nichanStatus = ' . json_encode($status, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . ";\n";
+}
+
+// Moderator board pages are dynamic. Keep their data out of static files on restricted boards.
+function nichan_mod_board_status($uri) {
+	global $mod;
+	return $mod && nichan_can_see_board($uri, $mod) ? nichan_board_status_script(array($uri)) : '';
+}
+
+function nichan_write_status_script($path, array $uris) {
+	$script = nichan_board_status_script($uris);
+	if (file_put_contents($path, $script, LOCK_EX) !== strlen($script))
+		throw new RuntimeException('Cannot write board status: ' . $path);
+	nichan_cf_queue($path);
+}
+
+function nichan_write_posting_status_files() {
+	global $config, $nichan_settings, $nichan_country_policy_cache;
+	nichan_lock_board_access_files();
+	// Another request may have changed visibility or gallery assignments while we waited.
+	$nichan_settings = $nichan_country_policy_cache = null;
+	nichan_write_status_script('site-status.js', nichan_public_board_uris());
 	nichan_cf_queue('posting-status.css');
 	$hide = "form[name=\"post\"], #quick-reply, .createbutton { display: none !important; }\n" .
 		".nichan-closed { margin: 1em auto; padding: .6em 1em; max-width: 600px; text-align: center; font-weight: bold; border: 1px solid rgba(200,60,60,.6); }\n";
@@ -617,8 +667,16 @@ function nichan_write_posting_status_files() {
 		: "/* posting open */\n");
 	foreach (listBoards() as $b) {
 		$dir = sprintf($config['board_path'], $b['uri']);
-		if (!is_dir($dir))
-			continue;
+		$status = $dir . 'site-status.js';
+		if (nichan_visibility_allows((int)$b['visibility'])) {
+			if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir))
+				throw new RuntimeException('Cannot create board directory: ' . $dir);
+			nichan_write_status_script($status, array($b['uri']));
+		} elseif (is_file($status)) {
+			if (!unlink($status))
+				throw new RuntimeException('Cannot remove old board status: ' . $status);
+			nichan_cf_queue($status);
+		}
 		@file_put_contents($dir . 'posting-status.css', !empty($b['posting_closed'])
 			? "/* posting closed on this board */\n" . $hide . ".nichan-closed-board { display: block !important; }\n"
 			: "/* posting open */\n");
@@ -748,13 +806,43 @@ function nichan_plain_text($text, $max = 200) {
 	return $t;
 }
 
-// "js/ajax.js?v=<mtime>" for the site's own scripts and styles, so browsers fetch a changed file at once.
+// Keep the original URL directory so relative references inside stylesheets still work.
 function nichan_asset($path) {
-	// local files only ("/js/ajax.js"), not other sites
-	if (!preg_match('~\.(?:js|css)$~', $path) || preg_match('~^(?:[a-z]+:)?//~i', $path))
+	global $config;
+	static $versions = array();
+	if (isset($versions[$path]))
+		return $versions[$path];
+	if (!preg_match('~\.(js|css)$~D', $path, $match) || preg_match('~^(?:[a-z]+:)?//|(?:^|/)\.\.(?:/|$)~i', $path))
 		return $path;
-	$file = dirname(__DIR__) . '/' . ltrim($path, '/');
-	return is_file($file) ? $path . '?v=' . filemtime($file) : $path;
+	$root = $config['root'] ?? '/';
+	$relative = ltrim($root !== '' && strpos($path, $root) === 0 ? substr($path, strlen($root)) : $path, '/');
+	$file = dirname(__DIR__) . '/' . $relative;
+	if (!is_file($file))
+		return $path;
+	if (!preg_match('~^(?:js|stylesheets)/~', $relative) || in_array(basename($relative), array('custom.css', 'geo.css', 'posting-status.css', 'site-status.js'), true))
+		return $path . '?v=' . filemtime($file);
+
+	// An old generated board page must still receive the exact bytes named by its URL.
+	$bytes = file_get_contents($file);
+	if ($bytes === false)
+		return $path;
+	$hash = hash('sha256', $bytes);
+	$dir = dirname(__DIR__) . '/tmp/nichan-assets';
+	$snapshot = $dir . '/' . $hash . '.' . $match[1];
+	if (!is_file($snapshot)) {
+		if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir))
+			return $path;
+		$tmp = tempnam($dir, 'build-');
+		if ($tmp === false)
+			return $path;
+		$written = file_put_contents($tmp, $bytes) === strlen($bytes) && chmod($tmp, 0644) && @rename($tmp, $snapshot);
+		if (!$written) {
+			@unlink($tmp);
+			if (!is_file($snapshot))
+				return $path;
+		}
+	}
+	return $versions[$path] = $path . '?v=' . $hash;
 }
 
 function nichan_default_capcode($who = null) {
@@ -1000,28 +1088,46 @@ function nichan_board_message($uri) {
 /* ---------------------------------------------------------------- banners */
 
 // Galleries of banners (mod.php?/nichan-banners): array of array('id' => int, 'name', 'boards' => array(uri),
-// 'files' => array(file name)); the pictures are in static/banners/<id>/.
+// 'files' => array(file name), optional 'links' => array(file name => destination)).
 function nichan_banner_galleries() {
 	$list = json_decode((string)nichan_setting('banner_galleries', ''), true);
 	return is_array($list) ? $list : array();
 }
 
-function nichan_banner_galleries_save(array $list) {
-	nichan_set_setting('banner_galleries', json_encode(array_values($list), JSON_UNESCAPED_UNICODE));
+function nichan_banner_galleries_save(array $list, &$pending_files = null) {
+	nichan_set_setting('banner_galleries', json_encode(array_values($list), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+	$pending_files = array(); // Files committed to the gallery survive a later status-file failure.
 	nichan_write_posting_status_files(); // site-status.js carries the lists; no page has to be rebuilt
 }
 
 // For site-status.js: array(uri => array(url, ...)). A board in two galleries gets the banners of both; a board in
 // none gets no banner. The page shows one of them at random (templates/header.html: nichanBanner).
-function nichan_banner_map() {
+function nichan_banner_map(array $uris, &$links) {
 	global $config;
 	$map = array();
+	$links = array();
 	foreach (nichan_banner_galleries() as $g) {
-		foreach ($g['boards'] as $uri)
-			foreach ($g['files'] as $file)
-				$map[$uri][] = $config['root'] . 'static/banners/' . (int)$g['id'] . '/' . $file;
+		$boards = array_intersect($g['boards'], $uris);
+		if (!$boards) continue;
+		foreach ($g['files'] as $file) {
+			$src = $config['root'] . 'static/banners/' . (int)$g['id'] . '/' . $file;
+			foreach ($boards as $uri)
+				$map[$uri][] = $src;
+			$link = nichan_banner_link($g['links'][$file] ?? '');
+			if ($link !== null && $link !== '') $links[$src] = $link;
+		}
 	}
 	return $map;
+}
+
+// An empty field clears the link. Accept site paths and absolute web URLs, including Ukrainian text.
+function nichan_banner_link($value) {
+	if (!is_string($value)) return null;
+	$url = trim($value);
+	if ($url === '') return '';
+	if (!mb_check_encoding($url, 'UTF-8') || mb_strlen($url, 'UTF-8') > 2048 || preg_match('~[\x00-\x20\x7f\\\\]~', $url)) return null;
+	if ($url[0] === '/') return substr($url, 0, 2) === '//' ? null : $url;
+	return preg_match('~^https?://~i', $url) && parse_url($url, PHP_URL_HOST) ? $url : null;
 }
 
 // Is any board showing regions (tools/update-geoip.php then downloads the city database)?

@@ -1,6 +1,15 @@
 {% macro boards_pick(boards, chosen) %}
 	<div class="nb-boards">{% for b in boards %}<label class="na-check"><input type="checkbox" name="boards[]" value="{{ b.uri }}"{% if b.uri in chosen %} checked{% endif %}> /{{ b.uri }}/</label>{% endfor %}</div>
 {% endmacro %}
+{% macro uploads(title) %}
+	<div class="nb-upload">
+		<label>{{ title }} <span class="unimportant">(можна кілька; PNG, GIF, JPEG або WEBP до 1 МБ)</span>
+			<input type="file" name="files[]" multiple accept="image/png,image/gif,image/jpeg,image/webp"></label>
+		<div class="nb-upload-links"></div>
+		<noscript><label>Посилання для першого файлу (необов’язково)
+			<input type="text" name="upload_links[0]" inputmode="url" maxlength="2048" placeholder="/b/ або https://…"></label></noscript>
+	</div>
+{% endmacro %}
 {% import _self as m %}
 <style>
 	.nb-boards { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 4px 0 10px; }
@@ -29,11 +38,12 @@
 					<img src="{{ config.root }}static/banners/{{ g.id }}/{{ p.file }}" alt="">
 					<span{% if p.w != 300 or p.h != 100 %} class="nb-odd" title="Не 300×100: показується вписаним у 300×100"{% endif %}>{{ p.w }}×{{ p.h }}</span>
 					<label class="na-check" style="display:inline"><input type="checkbox" name="delete[]" value="{{ p.file }}"> прибрати</label>
+					<label>Посилання (необов’язково)
+						<input type="text" name="links[{{ p.file|e }}]" value="{{ p.link|e }}" inputmode="url" maxlength="2048" placeholder="/b/ або https://…"></label>
 				</div>
 				{% endfor %}
 			</div>
-			<label>Додати банери <span class="unimportant">(можна кілька; PNG, GIF, JPEG або WEBP до 1 МБ)</span>
-				<input type="file" name="files[]" multiple accept="image/png,image/gif,image/jpeg,image/webp"></label>
+			{{ m.uploads('Додати банери') }}
 			<p><input type="submit" value="Зберегти">
 				<label class="na-check" style="display:inline;margin-left:20px"><input type="checkbox" name="delete_gallery" value="1" onchange="if (this.checked && !confirm('Видалити галерею «{{ g.name|e('js') }}» з усіма банерами?')) this.checked = false"> видалити галерею</label></p>
 		</fieldset>
@@ -47,9 +57,29 @@
 			<label>Назва <input type="text" name="name" maxlength="60" placeholder="Галерея {{ galleries|length + 1 }}"></label>
 			<strong>Дошки</strong>
 			{{ m.boards_pick(boards, []) }}
-			<label>Банери <span class="unimportant">(можна кілька одразу; PNG, GIF, JPEG або WEBP до 1 МБ, найкраще 300×100)</span>
-				<input type="file" name="files[]" multiple accept="image/png,image/gif,image/jpeg,image/webp"></label>
+			{{ m.uploads('Банери') }}
 			<p><input type="submit" value="Створити"></p>
 		</fieldset>
 	</form>
 </div>
+<script>
+document.querySelectorAll('.nb-upload').forEach(function (box) {
+	var picker = box.querySelector('input[type=file]'), list = box.querySelector('.nb-upload-links');
+	function showLinks() {
+		var previous = new Map();
+		list.querySelectorAll('input').forEach(function (input) { previous.set(input.dataset.file, input.value); });
+		list.textContent = '';
+		Array.from(picker.files).forEach(function (file, i) {
+			var label = document.createElement('label'), input = document.createElement('input');
+			label.textContent = 'Посилання для «' + file.name + '» (необов’язково)';
+			input.type = 'text'; input.inputMode = 'url'; input.maxLength = 2048;
+			input.name = 'upload_links[' + i + ']'; input.placeholder = '/b/ або https://…';
+			input.dataset.file = JSON.stringify([file.name, file.size, file.lastModified]);
+			input.value = previous.get(input.dataset.file) || '';
+			label.appendChild(input); list.appendChild(label);
+		});
+	}
+	picker.addEventListener('change', showLinks);
+	showLinks();
+});
+</script>

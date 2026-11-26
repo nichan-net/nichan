@@ -120,14 +120,19 @@
 		{ id: 'strike', label: EN ? 'S' : 'З', style: 'text-decoration:line-through', md: ['~~', '~~'], cmd: 'strikeThrough' },
 		{ id: 'spoiler', label: T.spoiler, md: ['%%', '%%'], wrap: 'spoiler' },
 		{ id: 'code', label: T.code, md: ['[code]', '[/code]'], wrap: 'code' },
+		{ id: 'math', label: '∑', title: EN ? 'LaTeX formula' : 'Формула LaTeX', md: ['[math]', '[/math]'], wrap: 'nichan-ed-math' },
 		{ id: 'heading', label: T.heading, md: ['==', '=='], wrap: 'heading', line: true },
 		{ id: 'quote', label: T.quote, quote: true }
 	];
 
 	// Markup (what the server understands) -> HTML for the visual editor.
 	function markupToHtml(md) {
-		var codes = [];
-		md = md.replace(/\[code\]([\s\S]*?)\[\/code\]/g, function (m, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+		var literals = [];
+		md = md.replace(/\[(code|math)\]([\s\S]*?)\[\/\1\]/gi, function (match, tag, source) {
+			var content = esc(source).replace(/\n/g, '<br>');
+			literals.push(tag.toLowerCase() === 'code' ? '<code>' + content + '</code>' : '<span class="nichan-ed-math">' + content + '</span>');
+			return '\u0000' + (literals.length - 1) + '\u0000';
+		});
 		var lines = md.split('\n').map(function (line) {
 			var h = esc(line);
 			var hm = /^\s*==(.+?)==\s*$/.exec(line);
@@ -138,7 +143,7 @@
 		var html = lines.join('<br>');
 		// a text that ends with a line break: an editable field shows the new empty line only with one more <br>
 		if (/\n$/.test(md)) html += '<br>';
-		return html.replace(/\u0000(\d+)\u0000/g, function (m, i) { return '<code>' + esc(codes[i]).replace(/\n/g, '<br>') + '</code>'; });
+		return html.replace(/\u0000(\d+)\u0000/g, function (match, i) { return literals[i] || ''; });
 	}
 	function inlineMarkup(h) {
 		return h
@@ -191,6 +196,7 @@
 			if (n.nodeType !== 1) return;
 			var tag = n.tagName, cls = n.className || '', st = n.getAttribute('style') || '';
 			if (tag === 'BR') { out += '\n'; return; }
+			if (cls === 'nichan-ed-math') { out += '[math]' + (n.innerText || n.textContent).replace(/\u200b/g, '') + '[/math]'; return; }
 			if (tag === 'CODE' || tag === 'PRE') { out += '[code]' + (n.innerText || n.textContent).replace(/\u200b/g, '') + '[/code]'; return; }
 			if (tag === 'B' || tag === 'STRONG' || /font-weight:\s*(bold|[6-9]00)/.test(st)) return wrapped(n, '**', '**');
 			if (tag === 'I' || tag === 'EM' || /font-style:\s*italic/.test(st)) return wrapped(n, '*', '*');
@@ -233,7 +239,8 @@
 			var btn = document.createElement('button');
 			btn.type = 'button';
 			btn.textContent = b.label;
-			btn.title = T[b.id];
+			btn.title = b.title || T[b.id];
+			if (b.title) btn.setAttribute('aria-label', b.title);
 			btn.setAttribute('data-tool', b.id);
 			if (b.style) btn.setAttribute('style', b.style);
 			tools.appendChild(btn);

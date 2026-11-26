@@ -47,7 +47,7 @@ require __DIR__ . '/inc/install-setup.php';
 
 $issues = [];
 if (PHP_VERSION_ID < 80100) $issues[] = 'Потрібна PHP 8.1 або новіша.';
-foreach (['pdo_mysql', 'gd', 'mbstring', 'fileinfo', 'intl', 'curl', 'zip'] as $ext) {
+foreach (['pdo_mysql', 'gd', 'mbstring', 'fileinfo', 'dom', 'intl', 'curl', 'zip'] as $ext) {
     if (!extension_loaded($ext)) $issues[] = 'Увімкніть розширення PHP ' . $ext . '.';
 }
 if (!function_exists('imagettftext') || !function_exists('imagewebp')) $issues[] = 'Для капчі та мініатюр потрібна GD з FreeType і WebP.';

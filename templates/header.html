@@ -98,11 +98,24 @@
 		{% if not mod %}
 		{# reCAPTCHA on/off and its site key come from this tiny file (rewritten from mod.php, no rebuild needed). #}
 		<script>window.nichanRecaptchaLoad = function () { window.nichanRecaptchaReady = true; if (window.nichanRenderRecaptcha) window.nichanRenderRecaptcha(); };</script>
-		{% if not defer_front_status %}<script src="{{ config.root }}site-status.js"></script>{% endif %}
+		{% if not defer_front_status %}<script src="{{ config.root }}{% if board_status %}{{ board.dir|e }}{% endif %}site-status.js"></script>{% endif %}
+		{% elseif board_status %}
+		<script>{{ nichan_mod_board_status(board.uri) }}</script>
+		{% endif %}
+		{% if not mod or board_status %}
 		{# a banner of the board's galleries (mod.php -> Банери), at random, put where the page calls it; a plain picture #}
 		<script>window.nichanBanner = function (at, uri) { var s = window.nichanStatus, l = s && s.banners && s.banners[uri]; if (!at || !l || !l.length) return;
-			var img = document.createElement('img'); img.className = 'board_image nichan-banner'; img.alt = ''; img.width = 300; img.height = 100; img.src = l[Math.floor(Math.random() * l.length)];
-			at.parentNode.insertBefore(img, at); };</script>
+			var src = l[Math.floor(Math.random() * l.length)], link = s.bannerLinks && s.bannerLinks[src];
+			var img = document.createElement('img'); img.className = 'board_image nichan-banner'; img.alt = ''; img.width = 300; img.height = 100; img.src = src;
+			var node = img;
+			if (link) {
+				var a = document.createElement('a'); a.href = link;
+				if (/^https?:$/.test(a.protocol)) {
+					a.className = 'nichan-banner-link'; img.alt = (window.nichan_lang === 'en' ? 'Open ' : 'Перейти до ') + link;
+					a.appendChild(img); node = a;
+				}
+			}
+			at.parentNode.insertBefore(node, at); };</script>
 		{% endif %}
 {% if not portal_section %}
 {% if not mod and not is_front_page %}

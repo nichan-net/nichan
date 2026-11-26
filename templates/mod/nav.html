@@ -10,7 +10,7 @@
 		<button type="button" class="na-toggle" onclick="document.getElementById('na-nav').classList.toggle('open')" title="Меню"><i class="fa fa-bars"></i></button>
 	</div>
 	<div class="na-groups">
-		{{ m.item('', 'Головна панелі', 'tachometer', current) }}
+		{{ m.item('', 'Головна панель', 'tachometer', current) }}
 
 		<div class="na-group">Модерація</div>
 		{% if mod|hasPermission(config.mod.reports) %}{{ m.item('reports', 'Скарги', 'flag', current, counts.reports, true) }}{% endif %}

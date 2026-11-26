@@ -44,6 +44,7 @@
         return true;
     }
 
+    window.nichanLoadPaint = loadEditor;
     window.nichanOpenPaint = function (button) {
         var form = button.closest('form');
         var upload = form && form.querySelector('#upload');

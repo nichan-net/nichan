@@ -41,7 +41,7 @@ self.addEventListener('fetch', function (e) {
 
 	// The version is in the response URL. Keep one slot per versioned asset and
 	// check the URL on every read, including when two tabs use different versions.
-	var versioned = /\.(js|css)$/.test(url.pathname) && /^\?v=\d+$/.test(url.search);
+	var versioned = /\.(js|css)$/.test(url.pathname) && /^\?v=(?:\d+|[a-f0-9]{64})$/.test(url.search);
 	var key = versioned ? new Request(url.origin + url.pathname, req) : req;
 	var cache = caches.open(STATIC);
 	var hit = cache.then(function (c) { return c.match(key); }).catch(function () {});

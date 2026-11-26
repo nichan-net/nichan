@@ -565,6 +565,7 @@ function mod_new_board() {
 			cache::delete('all_boards');
 		
 		// Build the board
+		nichan_write_posting_status_files();
 		buildIndex();
 		
 		rebuildThemes('boards');
@@ -1720,7 +1721,7 @@ function mod_edit_post($board, $edit_raw_html, $postID) {
 	if (!openBoard($board))
 		error($config['error']['noboard']);
 
-	if (!hasPermission($config['mod']['editpost'], $board))
+	if (!nichan_can_see_board($board, $mod) || !hasPermission($config['mod']['editpost'], $board))
 		error($config['error']['noaccess']);
 	
 	if ($edit_raw_html && !hasPermission($config['mod']['rawhtml'], $board))
@@ -1735,41 +1736,83 @@ function mod_edit_post($board, $edit_raw_html, $postID) {
 	if (!$post = $query->fetch(PDO::FETCH_ASSOC))
 		error($config['error']['404']);
 	
+	require_once __DIR__ . '/attachment-images.php';
+	$revision = nichan_mod_edit_revision($post);
 	if (isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['body'])) {
-		// Remove any modifiers they may have put in
-		$_POST['body'] = remove_modifiers($_POST['body']);
-
-		// Add back modifiers in the original post
-		$modifiers = extract_modifiers($post['body_nomarkup']);
-		foreach ($modifiers as $key => $value) {
-			$_POST['body'] .= "<tinyboard $key>$value</tinyboard>";
+		foreach (array('name', 'email', 'subject', 'body') as $field)
+			if (!is_string($_POST[$field])) error(sprintf($config['error']['invalidfield'], $field));
+		if (isset($_POST['revision']) && (!is_string($_POST['revision']) || !hash_equals($revision, $_POST['revision'])))
+			nichan_mod_edit_conflict();
+		$new_paths = array();
+		register_shutdown_function(function () use (&$new_paths) {
+			foreach ($new_paths as $path)
+				if (is_file($path)) @unlink($path);
+		});
+		$changes = nichan_mod_image_changes($post, $new_paths);
+		$values = array();
+		foreach (array('name', 'email', 'subject') as $field) {
+			if ((string)$post[$field] !== $_POST[$field])
+				$values[$field] = $_POST[$field];
 		}
-
-		if ($edit_raw_html)
-			$query = prepare(sprintf('UPDATE ``posts_%s`` SET `name` = :name, `email` = :email, `subject` = :subject, `body` = :body, `body_nomarkup` = :body_nomarkup WHERE `id` = :id', $board));
-		else
-			$query = prepare(sprintf('UPDATE ``posts_%s`` SET `name` = :name, `email` = :email, `subject` = :subject, `body_nomarkup` = :body WHERE `id` = :id', $board));
-		$query->bindValue(':id', $postID);
-		$query->bindValue(':name', $_POST['name']);
-		$query->bindValue(':email', $_POST['email']);
-		$query->bindValue(':subject', $_POST['subject']);
-		$query->bindValue(':body', $_POST['body']);
-		if ($edit_raw_html) {
-			$body_nomarkup = $_POST['body'] . "\n<tinyboard raw html>1</tinyboard>";
-			$query->bindValue(':body_nomarkup', $body_nomarkup);
+		$body = str_replace("\r\n", "\n", $_POST['body']);
+		$old_body = $edit_raw_html ? $post['body'] : remove_modifiers((string)$post['body_nomarkup']);
+		$body_changed = $body !== str_replace("\r\n", "\n", (string)$old_body);
+		if ($body_changed) {
+			$body = remove_modifiers($body);
+			foreach (extract_modifiers((string)$post['body_nomarkup']) as $key => $value)
+				$body .= "<tinyboard $key>$value</tinyboard>";
+			$values['body_nomarkup'] = $body;
+			if ($edit_raw_html) {
+				$values['body'] = $body;
+				$values['body_nomarkup'] .= "\n<tinyboard raw html>1</tinyboard>";
+			} elseif ($body === '') {
+				$values['body'] = '';
+			}
 		}
-		$query->execute() or error(db_error($query));
-		
-		if ($edit_raw_html) {
-			modLog("Edited raw HTML of post #{$postID}");
-		} else {
-			modLog("Edited post #{$postID}");
-			rebuildPost($postID);
+		if ($changes) {
+			$originals = json_decode($post['files'], true);
+			$files = array_replace($originals, $changes);
+			$values['files'] = json_encode($files, JSON_THROW_ON_ERROR);
+			$hashes = array();
+			foreach ($files as $file) {
+				if ($file && $file['file'] !== 'deleted') $hashes[] = $file['hash'] ?? '';
+			}
+			$values['filehash'] = in_array('', $hashes, true) ? null :
+				(count($hashes) === 1 ? $hashes[0] : md5(implode('', $hashes)));
 		}
-		
-		buildIndex();
-
-		rebuildThemes('post', $board);
+		if ($values) {
+			// Compare against the snapshot again in the write itself. The upload may take time to process.
+			$set = $where = array();
+			$params = array('id' => $postID);
+			foreach ($values as $field => $value) {
+				$set[] = "`$field` = :$field";
+				$params[$field] = $value;
+			}
+			foreach (array('name', 'email', 'subject', 'body', 'body_nomarkup', 'files') as $field) {
+				$where[] = "BINARY `$field` <=> :old_$field";
+				$params['old_' . $field] = $post[$field];
+			}
+			$query = prepare(sprintf('UPDATE ``posts_%s`` SET %s WHERE `id` = :id AND %s', $board,
+				implode(', ', $set), implode(' AND ', $where)));
+			$query->execute($params) or error(db_error($query));
+			if ($query->rowCount() !== 1)
+				nichan_mod_edit_conflict();
+			$new_paths = array();
+			$old_images_removed = !$changes || nichan_mod_remove_replaced_images($originals, $changes);
+			$description = $edit_raw_html ? "Edited raw HTML of post #{$postID}" : "Edited post #{$postID}";
+			if ($changes) {
+				$slots = array_map(function ($slot) { return $slot + 1; }, array_keys($changes));
+				$description .= ' (replaced images ' . implode(', ', $slots) . ')';
+			}
+			modLog($description);
+			if ($edit_raw_html || !$body_changed || !rebuildPost($postID))
+				buildThread($post['thread'] ?: $postID);
+			buildIndex();
+			rebuildThemes('post', $board);
+			if (!$old_images_removed)
+				error(strpos($config['locale'], 'en') === 0 ? 'Changes saved, but an old image could not be removed. Check the server error log.'
+					: 'Зміни збережено, але старе зображення не вдалося видалити. Перевірте журнал помилок сервера.');
+		}
 		
 		header('Location: ?/' . sprintf($config['board_path'], $board) . $config['dir']['res'] . link_for($post) . '#' . $postID, true, $config['redirect_http']);
 	} else {
@@ -1787,7 +1830,8 @@ function mod_edit_post($board, $edit_raw_html, $postID) {
 			$post['body'] = str_replace("\t", '&#09;', $post['body']);
 		}
 
-		mod_page(_('Edit post'), 'mod/edit_post_form.html', array('token' => $security_token, 'board' => $board, 'raw' => $edit_raw_html, 'post' => $post));
+		mod_page(_('Edit post'), 'mod/edit_post_form.html', array('token' => $security_token, 'board' => $board, 'raw' => $edit_raw_html,
+			'post' => $post, 'revision' => $revision, 'images' => hasPermission($config['mod']['deletefile'], $board) ? nichan_mod_image_slots($post) : array()));
 	}
 }
 

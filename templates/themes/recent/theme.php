@@ -41,6 +41,8 @@
 				return '';
 			if ($node->tagName === 'br')
 				return $text(' ');
+			if ($node->tagName === 'math' && $node->hasAttribute('aria-label'))
+				return $text($node->getAttribute('aria-label'));
 
 			$html = '';
 			foreach ($node->childNodes as $child) {

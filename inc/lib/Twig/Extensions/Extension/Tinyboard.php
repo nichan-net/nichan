@@ -55,6 +55,7 @@ class Twig_Extensions_Extension_Tinyboard extends Twig_Extension
 			new Twig_SimpleFunction('nichan_trip_html', 'nichan_trip_html'),
 			new Twig_SimpleFunction('nichan_default_capcode', 'nichan_default_capcode'),
 			new Twig_SimpleFunction('nichan_asset', 'nichan_asset'),
+			new Twig_SimpleFunction('nichan_mod_board_status', 'nichan_mod_board_status'),
 			new Twig_SimpleFunction('nichan_footer', 'nichan_footer', array('is_safe' => array('html'))),
 			new Twig_SimpleFunction('nichan_archived', 'nichan_archived'),
 			new Twig_SimpleFunction('nichan_bump_remaining', 'nichan_bump_remaining'),

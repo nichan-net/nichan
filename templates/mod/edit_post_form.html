@@ -1,5 +1,7 @@
-<form action="" method="post">
+{% set en = config.locale starts with 'en' %}
+<form action="" method="post" enctype="multipart/form-data" data-paint-script="{{ nichan_asset(config.root ~ 'js/dead-paint/paint-tool.js')|e }}">
 	<input type="hidden" name="token" value="{{ token }}">
+	<input type="hidden" name="revision" value="{{ revision }}">
 	
 	<table>
 		<tr>
@@ -15,7 +17,7 @@
 				{% trans %}Email{% endtrans %}
 			</th>
 			<td>
-				<input type="text" name="email" size="25" maxlength="40" autocomplete="off" value="{{ post.email }}">
+				<input type="text" name="email" size="25" maxlength="40" autocomplete="off" value="{{ post.email|e }}">
 			</td>
 		</tr>
 		<tr>
@@ -35,6 +37,21 @@
 				<textarea name="body" id="body" rows="8" cols="35">{% if raw %}{{ post.body }}{% else %}{{ post.body_nomarkup }}{% endif %}</textarea>
 			</td>
 		</tr>
+		{% for slot, file in images %}
+		<tr class="mod-image" data-source="{{ (config.uri_img ~ file.file)|e }}" data-width="{{ file.width|e }}" data-height="{{ file.height|e }}">
+			<th>{{ en ? 'Image' : 'Зображення' }} {{ slot + 1 }}</th>
+			<td>
+				<a href="{{ (config.uri_img ~ file.file)|e }}" target="_blank" rel="noopener">
+					<img class="mod-preview" style="max-width:90px;max-height:70px;vertical-align:middle" alt="{{ file.filename|e }}"
+						src="{{ (file.thumb == 'spoiler' ? config.root ~ config.spoiler_image : config.uri_thumb ~ file.thumb)|e }}">
+				</a>
+				<button type="button" class="mod-paint" hidden>{{ en ? 'Edit image' : 'Редагувати зображення' }}</button>
+				<label>{{ en ? 'Replace' : 'Замінити' }} <input type="file" name="replacement_{{ slot }}" accept="image/png,image/jpeg,image/gif,image/webp,image/bmp"></label>
+				<button type="button" class="mod-reset" hidden>{{ en ? 'Discard change' : 'Скасувати зміну' }}</button>
+				<small class="mod-pending" role="status"></small>
+			</td>
+		</tr>
+		{% endfor %}
 	</table>
 	<p style="text-align:center">
 		{% if raw %}
@@ -45,3 +62,4 @@
 		{% endif %}
 	</p>
 </form>
+{% if images %}<script src="{{ nichan_asset(config.root ~ 'js/mod-attachment-images.js')|e }}" defer></script>{% endif %}

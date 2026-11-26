@@ -32,7 +32,7 @@
           {% endif %}
         </script>
 
-	{% include 'header.html' %}
+	{% include 'header.html' with {'board_status': not no_post_form} %}
 	        <style>
             .hidden { display: none; }
             .unhidden { display: block; } 
@@ -78,7 +78,7 @@
 	
 	{% if pm %}<div class="top_notice">You have <a href="?/PM/{{ pm.id }}">an unread PM</a>{% if pm.waiting > 0 %}, plus {{ pm.waiting }} more waiting{% endif %}.</div><hr />{% endif %}
 	{% if config.url_banner %}<img class="board_image" src="{{ config.url_banner }}" {% if config.banner_width or config.banner_height %}style="{% if config.banner_width %}width:{{ config.banner_width }}px{% endif %};{% if config.banner_width %}height:{{ config.banner_height }}px{% endif %}" {% endif %}alt="" />{% endif %}
-	{% if not mod %}<script>window.nichanBanner && nichanBanner(document.currentScript, '{{ board.uri }}');</script>{% endif %}
+	{% if not no_post_form %}<script>window.nichanBanner && nichanBanner(document.currentScript, '{{ board.uri|e("js") }}');</script>{% endif %}
 	<div id="pagewrap">
 	<header>
 		<h1 class="glitch" data-text="{{ board.url }} - {{ board.title|e }}">{{ board.url }} - {{ board.title|e }}</h1>
@@ -142,6 +142,10 @@
 		{% endif %}
 	<hr />
 
+	{% if not mod and not no_post_form and not config.file_board and config.api.enabled and pages[0].selected %}
+	<div id="nichan-board-activity" data-feed="{{ config.root ~ board.dir ~ 'live.json' }}" aria-live="polite"><button type="button" hidden></button></div>
+	<script defer src="{{ nichan_asset(config.root ~ 'js/board-activity.js') }}"></script>
+	{% endif %}
 	<form name="postcontrols" action="{{ config.post_url }}" method="post">
 	<input type="hidden" name="board" value="{{ board.uri }}" />
 	{% if mod %}<input type="hidden" name="mod" value="1" />{% endif %}

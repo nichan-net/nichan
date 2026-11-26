@@ -343,6 +343,8 @@ function mod_nichan_boards() {
 	if (!$can_visibility && !$can_close && !$can_close_site && !$can_captcha && !$can_integration)
 		error($config['error']['noaccess']);
 
+	if (isset($_POST['save']))
+		nichan_lock_board_access_files();
 	$boards = nichan_sort_boards(listBoards());
 	$recaptcha_ready = nichan_recaptcha_ready();
 	$text_ready = nichan_text_captcha_ready();
@@ -355,6 +357,8 @@ function mod_nichan_boards() {
 			if ($can_visibility && isset($_POST['visibility'][$uri])) {
 				$v = max(0, min(3, (int)$_POST['visibility'][$uri]));
 				if ($v != (int)$b['visibility']) {
+					if (in_array($v, array(NICHAN_VISIBILITY_STAFF, NICHAN_VISIBILITY_ADMINS), true))
+						nichan_protect_board_files($uri);
 					$sets['visibility'] = $v;
 					$changes[] = "/$uri/ visibility $v";
 				}
@@ -722,15 +726,33 @@ function mod_nichan_geo_flags($uri) {
 // mod.php?/nichan-banners: galleries of banners (300×100 above the board's name) and the boards each is shown on.
 // A board shows one banner of its galleries at random; a board in no gallery shows none.
 function mod_nichan_banners() {
-	global $config;
+	global $config, $nichan_settings;
 	if (!hasPermission($config['mod']['nichan_banners']))
 		error($config['error']['noaccess']);
+	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+		// All galleries share one setting. Serialize the read, update and status-file write.
+		$lock = fopen('tmp/locks/banner-galleries.lock', 'c');
+		if (!$lock || !flock($lock, LOCK_EX)) error('Не вдалося зберегти галерею.');
+		$nichan_settings = null;
+	}
 	$galleries = nichan_banner_galleries();
 	$uris = array_map(function ($b) { return $b['uri']; }, listBoards());
 
 	if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-		// the pictures of the field "files[]": saved in static/banners/<id>/ under random names
-		$upload = function ($id) {
+		$created = $remove = array();
+		$remove_dir = null;
+		register_shutdown_function(function () use (&$created) {
+			foreach ($created as $path) @unlink($path);
+		});
+		$read_link = static function ($value) {
+			$url = nichan_banner_link($value);
+			if ($url === null)
+				error('Вкажіть посилання у форматі https://example.org або /b/. Залиште поле порожнім для банера без посилання.');
+			return $url;
+		};
+		foreach (array('links', 'upload_links') as $field)
+			if (isset($_POST[$field]) && !is_array($_POST[$field])) error('Некоректні посилання банерів.');
+		$upload = function ($id, &$links) use ($read_link, &$created) {
 			$saved = array();
 			if (empty($_FILES['files']['name']) || !is_array($_FILES['files']['name']))
 				return $saved;
@@ -738,6 +760,7 @@ function mod_nichan_banners() {
 			foreach ($_FILES['files']['name'] as $i => $name) {
 				if ($_FILES['files']['error'][$i] === UPLOAD_ERR_NO_FILE)
 					continue;
+				$link = $read_link($_POST['upload_links'][$i] ?? '');
 				if ($_FILES['files']['error'][$i] !== UPLOAD_ERR_OK)
 					error('Не вдалося завантажити ' . utf8tohtml($name) . ' (помилка ' . (int)$_FILES['files']['error'][$i] . ').');
 				if ($_FILES['files']['size'][$i] > 1024 * 1024)
@@ -751,6 +774,8 @@ function mod_nichan_banners() {
 				$file = bin2hex(random_bytes(6)) . '.' . $ext;
 				if (!move_uploaded_file($_FILES['files']['tmp_name'][$i], $dir . '/' . $file))
 					error('Не вдалося зберегти ' . utf8tohtml($name) . '.');
+				$created[] = $dir . '/' . $file;
+				if ($link !== '') $links[$file] = $link;
 				$saved[] = $file;
 			}
 			return $saved;
@@ -764,10 +789,11 @@ function mod_nichan_banners() {
 			$id = 1;
 			foreach ($galleries as $g)
 				$id = max($id, (int)$g['id'] + 1);
-			$files = $upload($id);
+			$links = array();
+			$files = $upload($id, $links);
 			if (!$files)
 				error('Додайте хоча б один банер.');
-			$galleries[] = array('id' => $id, 'name' => $name !== '' ? $name : 'Галерея ' . $id, 'boards' => $boards, 'files' => $files);
+			$galleries[] = array('id' => $id, 'name' => $name !== '' ? $name : 'Галерея ' . $id, 'boards' => $boards, 'files' => $files, 'links' => $links);
 			modLog('Banners: new gallery #' . $id . ' (' . count($files) . ' banners; ' . ($boards ? '/' . implode('/, /', $boards) . '/' : 'no boards') . ')');
 		} else {
 			foreach ($galleries as $k => &$g) {
@@ -775,20 +801,26 @@ function mod_nichan_banners() {
 					continue;
 				$dir = 'static/banners/' . $gid;
 				if (!empty($_POST['delete_gallery'])) {
-					foreach (glob($dir . '/*') ?: array() as $f)
-						@unlink($f);
-					@rmdir($dir);
+					$remove = glob($dir . '/*') ?: array();
+					$remove_dir = $dir;
 					unset($galleries[$k]);
 					modLog('Banners: deleted gallery #' . $gid);
 					break;
 				}
-				foreach (isset($_POST['delete']) ? (array)$_POST['delete'] : array() as $file) {
-					if (($pos = array_search($file, $g['files'], true)) !== false) {
-						@unlink($dir . '/' . basename($file));
-						unset($g['files'][$pos]);
+				$links = $g['links'] ?? array();
+				$delete = (array)($_POST['delete'] ?? array());
+				foreach ($g['files'] as $pos => $file) {
+					if (in_array($file, $delete, true)) {
+						$remove[] = $dir . '/' . basename($file);
+						unset($g['files'][$pos], $links[$file]);
+					} elseif (isset($_POST['links'][$file])) {
+						$link = $read_link($_POST['links'][$file]);
+						if ($link === '') unset($links[$file]);
+						else $links[$file] = $link;
 					}
 				}
-				$g['files'] = array_values(array_merge($g['files'], $upload($gid)));
+				$g['files'] = array_merge($g['files'], $upload($gid, $links));
+				$g['links'] = $links;
 				$g['boards'] = $boards;
 				if ($name !== '')
 					$g['name'] = $name;
@@ -797,7 +829,9 @@ function mod_nichan_banners() {
 			}
 			unset($g);
 		}
-		nichan_banner_galleries_save($galleries);
+		nichan_banner_galleries_save($galleries, $created);
+		foreach ($remove as $path) @unlink($path);
+		if ($remove_dir !== null) @rmdir($remove_dir);
 		header('Location: ?/nichan-banners', true, $config['redirect_http']);
 		return;
 	}
@@ -806,7 +840,7 @@ function mod_nichan_banners() {
 		$g['pictures'] = array();
 		foreach ($g['files'] as $file) {
 			$size = @getimagesize('static/banners/' . (int)$g['id'] . '/' . $file);
-			$g['pictures'][] = array('file' => $file, 'w' => $size ? $size[0] : 0, 'h' => $size ? $size[1] : 0);
+			$g['pictures'][] = array('file' => $file, 'link' => $g['links'][$file] ?? '', 'w' => $size ? $size[0] : 0, 'h' => $size ? $size[1] : 0);
 		}
 	}
 	unset($g);

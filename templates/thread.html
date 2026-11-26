@@ -32,7 +32,7 @@
           var active_page = "thread", board_name = "{{ board.uri }}", thread_id = "{{ thread.id }}";
     	</script>
 
-	{% include 'header.html' %}
+	{% include 'header.html' with {'board_status': true} %}
 
 	<title>{{ meta_subject|e }} — {{ board.url }} — {{ (config.locale starts with 'en' ? config.nichan_site.name_en : config.nichan_site.name)|e }}</title>
         <style>
@@ -68,7 +68,7 @@
 	<a name="top"></a>
 	{% if pm %}<div class="top_notice">You have <a href="?/PM/{{ pm.id }}">an unread PM</a>{% if pm.waiting > 0 %}, plus {{ pm.waiting }} more waiting{% endif %}.</div><hr />{% endif %}
 	{% if config.url_banner %}<img class="board_image" src="{{ config.url_banner }}" {% if config.banner_width or config.banner_height %}style="{% if config.banner_width %}width:{{ config.banner_width }}px{% endif %};{% if config.banner_width %}height:{{ config.banner_height }}px{% endif %}" {% endif %}alt="" />{% endif %}
-	{% if not mod %}<script>window.nichanBanner && nichanBanner(document.currentScript, '{{ board.uri }}');</script>{% endif %}
+	<script>window.nichanBanner && nichanBanner(document.currentScript, '{{ board.uri|e("js") }}');</script>
 	<div id="pagewrap">
 	<header>
 		<h1 class="glitch" data-text="{{ board.url }} - {{ board.title|e }}">{{ board.url }} - {{ board.title|e }}</h1>

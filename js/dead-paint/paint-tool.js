@@ -2318,10 +2318,10 @@
             this.engine = null;
         }
 
-        open(onExport) {
+        open(onExport, imageUrl) {
             if ($('.paint-modal').length) return;
             this.onExport = onExport;
-            this.ui.open();
+            this.ui.open(imageUrl);
         }
 
         close() {

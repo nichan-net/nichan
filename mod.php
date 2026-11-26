@@ -4,6 +4,9 @@
  *  Copyright (c) 2010-2014 Tinyboard Development Group
  */
 
+header('Cache-Control: private, no-store');
+header('Cloudflare-CDN-Cache-Control: no-store');
+
 require_once 'inc/functions.php';
 
 if ($config['debug'])

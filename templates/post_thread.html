@@ -1,7 +1,7 @@
 {% filter remove_whitespace %}
 {# tabs and new lines will be ignored #}
 
-<div class="thread" id="thread_{{ post.id }}" data-board="{{ board.uri }}">
+<div class="thread" id="thread_{{ post.id }}" data-board="{{ board.uri }}"{% if index and post.latest_reply is defined %} data-last-reply="{{ post.latest_reply }}" data-replies="{{ post.replies }}"{% endif %}>
 {% if not index %}<a id="{{ post.id }}" class="post_anchor"></a>{% endif %}
 
 {% include 'post/fileinfo.html' %}

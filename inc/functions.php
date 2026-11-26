@@ -1502,7 +1502,7 @@ function indexThreadPreviews(array $threads) {
 		}
 	}
 	if ($count_ids) {
-		$query = query(sprintf('SELECT `thread`, COUNT(*) AS post_count, SUM(`num_files`) AS image_count FROM ``posts_%s``
+		$query = query(sprintf('SELECT `thread`, COUNT(*) AS post_count, SUM(`num_files`) AS image_count, MAX(`id`) AS last_id FROM ``posts_%s``
 			WHERE `thread` IN (%s) GROUP BY `thread`', $board['uri'], implode(',', $count_ids))) or error(db_error());
 		while ($row = $query->fetch(PDO::FETCH_ASSOC))
 			$previews[$row['thread']]['omitted'] = array('post_count' => $row['post_count'], 'image_count' => $row['image_count']);
@@ -1551,6 +1551,7 @@ function index($page, $mod=false, $brief = false) {
 
 		$thread->images = $num_images;
 		$thread->replies = isset($omitted['post_count']) ? $omitted['post_count'] : count($replies);
+		$thread->latest_reply = (int)($omitted['last_id'] ?? ($replies ? end($replies)['id'] : $th['id']));
 
 		if ($omitted) {
 			$thread->omitted = $omitted['post_count'] - ($th['sticky'] ? $config['threads_preview_sticky'] : $config['threads_preview']);
@@ -1817,6 +1818,17 @@ function buildIndex($global_api = "yes") {
 				$threads = $content['threads'];
 				$json = json_encode($api->translatePage($threads));
 				file_write($jsonFilename, $json);
+				if ($page == 1) {
+					// Board tabs poll this small static file without downloading post bodies or starting PHP.
+					$activity = array();
+					foreach ($threads as $thread) {
+						$activity[] = array('id' => (int)$thread->id, 'replies' => (int)$thread->replies, 'last' => $thread->latest_reply);
+					}
+					$liveFile = $board['dir'] . 'live.json';
+					$liveJson = json_encode($activity);
+					if (!is_file($liveFile) || file_get_contents($liveFile) !== $liveJson)
+						file_write($liveFile, $liveJson);
+				}
 
 				$catalog[$page-1] = $threads;
 
@@ -1844,6 +1856,7 @@ function buildIndex($global_api = "yes") {
 		elseif ($action == 'delete' || $catalog_api_action == 'delete') {
 			file_unlink($filename);
 			file_unlink($jsonFilename);
+			if ($page == 1) file_unlink($board['dir'] . 'live.json');
 		}
 	}
 
@@ -2076,6 +2089,12 @@ function markup(&$body, $track_cites = false, $op = false) {
 	$body = str_replace("\r", '', $body);
 	$body = utf8tohtml($body);
 
+	$math = array();
+	if (stripos($body, '[math]') !== false) {
+		require_once __DIR__ . '/nichan-math.php';
+		$body = nichan_math_extract($body, $math);
+	}
+
 	// Nichan: a pasted link to a post of this site becomes a normal cross-board citation
 	// (https://example.org/b/res/53220.html#53234 -> >>>/b/53234), with a preview on hover.
 	$hosts = array('nichan\.net', 'www\.nichan\.net');
@@ -2094,7 +2113,8 @@ function markup(&$body, $track_cites = false, $op = false) {
 		return $m[1] . '<a href="' . $config['root'] . $m[2] . '/">/' . $m[2] . '/</a>';
 	}, $body);
 
-	if (mysql_version() < 50503)
+	$needs_numeric_entities = mysql_version() < 50503;
+	if ($needs_numeric_entities)
 		$body = mb_encode_numericentity($body, array(0x010000, 0xffffff, 0, 0xffffff), 'UTF-8');
 
 	if ($config['markup_code']) {
@@ -2337,6 +2357,13 @@ function markup(&$body, $track_cites = false, $op = false) {
 	// replace tabs with 8 spaces
 	$body = str_replace("\t", '		', $body);
 
+	if ($math) {
+		if ($needs_numeric_entities) {
+			foreach ($math as $token => $html)
+				$math[$token] = mb_encode_numericentity($html, array(0x010000, 0xffffff, 0, 0xffffff), 'UTF-8');
+		}
+		$body = strtr($body, $math);
+	}
 	return $tracked_cites;
 }
 

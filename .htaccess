@@ -4,6 +4,19 @@ AddDefaultCharset UTF-8
 
 RewriteEngine on
 
+# Only an existing, content-addressed copy of public JS/CSS receives immutable caching.
+# END permits this internal read while keeping direct requests to tmp/ forbidden.
+RewriteCond %{REQUEST_FILENAME}?%{QUERY_STRING} ^(.+)/(?:js|stylesheets)/[^?]+\?v=([a-f0-9]{64})$
+RewriteCond %1/tmp/nichan-assets/%2.$1 -f
+RewriteCond %{QUERY_STRING} ^v=([a-f0-9]{64})$
+RewriteRule ^(?:js|stylesheets)/.+\.(js|css)$ tmp/nichan-assets/%1.$1 [END]
+
+<FilesMatch "^[a-f0-9]{64}\.(js|css)$">
+	<IfModule mod_headers.c>
+		Header set Cache-Control "public, max-age=31536000, immutable"
+	</IfModule>
+</FilesMatch>
+
 # Keep the actual proxy peer even when Apache has already restored the visitor's IP.
 RewriteRule ^(?:post\.php|api\.php|api/) - [E=NICHAN_PEER_ADDR:%{CONN_REMOTE_ADDR}]
 
